@@ -16,7 +16,6 @@
 // add column to page revision listing that lists the parent.
 
 
-
 class BU_Version_Workflow {
 
 	static function init() {
@@ -25,6 +24,10 @@ class BU_Version_Workflow {
 		add_action('admin_menu', array('BU_Version_Workflow', 'admin_menu'));
 		add_action('load-admin_page_bu_create_revision', array('BU_Revision_Controller', 'load_create_revision'));
 		add_action('transition_post_status', array('BU_Revision_Controller', 'publish_revision'), 10, 3);
+		add_filter('the_preview', array('BU_Version_Workflow', 'show_preview'), 12); // needs to come after the regular preview filter
+		add_filter('template_redirect', array('BU_Version_Workflow', 'redirect_preview'));
+
+		add_rewrite_tag('%revision%', '[^&]+'); // bring the revision id variable to life
 	}
 
 
@@ -54,7 +57,7 @@ class BU_Version_Workflow {
 		$args = array(
 			'labels' => $labels,
 			'description' => '',
-			'publicly_queryable' => false,
+			'publicly_queryable' => true,
 			'exclude_from_search' => false,
 			'capability_type' => 'page',
 			'capabilities' => array(), // need to figure out the capabilities piece
@@ -78,7 +81,7 @@ class BU_Version_Workflow {
 	}
 
 	static function register_meta_boxes($post_type, $position, $post) {
-		add_meta_box('bu_new_version', 'New Version', array('BU_Revision_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
+		add_meta_box('bu_new_version', 'New Version', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
 
 	}
 
@@ -92,9 +95,45 @@ class BU_Version_Workflow {
 		$GLOBALS['post'] = $original_post;
 	}
 
+	static function redirect_preview() {
+		if(is_preview() && is_singular('page_revision')) {
+			$request = strtolower(trim($_SERVER['REQUEST_URI']));
+			$request = preg_replace('#\?.*$#', '', $request);
+			$revision_id = (int) get_query_var('p');
+			$revision = get_post($revision_id);
+			$url = add_query_arg(array('revision' => $revision->ID, 'preview'=> 'true', 'p' => $revision->post_parent, 'post_type' => 'page'), $request);
+
+			wp_redirect($url, 302);
+			exit();
+		}
+	}
+
+
+	static function show_preview($post) {
+		if ( ! is_object($post) )
+			return $post;
+
+		$revision_id = (int) get_query_var('revision');
+
+		$preview = wp_get_post_autosave($revision_id);
+		if ( ! is_object($preview) ) {
+			$preview = get_post($revision_id);
+			if( !is_object($preview)) return $post;
+		}
+
+		$preview = sanitize_post($preview);
+
+		$post->post_content = $preview->post_content;
+		$post->post_title = $preview->post_title;
+		$post->post_excerpt = $preview->post_excerpt;
+
+		return $post;
+
+	}
 }
 
 add_action('init', array('BU_Version_Workflow', 'init'));
+
 
 
 class BU_Revision_Controller {
@@ -106,14 +145,19 @@ class BU_Revision_Controller {
 	}
 
 	static function publish_revision($new_status, $old_status, $post) {
+
 		if($post->post_type != 'page_revision') return;
 
 		if($new_status === 'publish' && $old_status !== 'publish') {
-			$revision = new Revision($post);
+			$revision = new BU_Revision($post);
 			$revision->publish();
+			// Is this the appropriate spot for a redirect?
+			wp_redirect($revision->get_original_edit_url());
+			exit;
 		}
 
 	}
+
 
 	// GET handler used to create a revision
 	static function load_create_revision() {
@@ -137,15 +181,12 @@ class BU_Revision_Controller {
 			$id = wp_insert_post($new_version);
 
 			$redirect_url = add_query_arg(array('post' => $id, 'post_type' => 'page_revision', 'action' => 'edit'), 'post.php');
-			//var_dump($redirect_url);
 			wp_redirect($redirect_url);
 			exit();
 		}
 	}
 
-	static function preview_post_link() {
 
-	}
 
 	static function create_revision_view() {
 		// no-op
@@ -158,13 +199,26 @@ class BU_Revision_Controller {
 class BU_Revision {
 
 	function __construct($post) {
+		$this->new_version = $post;
+		$this->original = get_post($this->new_version->post_parent);
+	}
 
-		$this->original = get_post($post->post_parent);
+	function create() {
+
 	}
 
 	function publish() {
+		$post = array();
+		$post['ID'] = $this->original->ID;
+		$post['post_title'] = $this->new_version->post_title;
+		$post['post_content'] = $this->new_version->post_content;
+		$post['post_excerpt'] = $this->new_version->post_excerpt;
+		wp_update_post($post);
+		wp_delete_post($this->new_version->ID);
+	}
 
-
+	function get_original_edit_url() {
+		return get_edit_post_link($this->original->ID, 'redirect');
 	}
 
 }
