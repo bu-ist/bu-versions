@@ -26,6 +26,7 @@ class BU_Version_Workflow {
 		add_action('transition_post_status', array('BU_Revision_Controller', 'publish_revision'), 10, 3);
 		add_filter('the_preview', array('BU_Version_Workflow', 'show_preview'), 12); // needs to come after the regular preview filter
 		add_filter('template_redirect', array('BU_Version_Workflow', 'redirect_preview'));
+		add_filter('page_row_actions', array('BU_Version_Workflow', 'page_row_actions'), 10, 2);
 
 		add_rewrite_tag('%revision%', '[^&]+'); // bring the revision id variable to life
 	}
@@ -35,6 +36,7 @@ class BU_Version_Workflow {
 
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
+		add_pages_page(null, 'Revisions', 'edit_pages', 'edit.php?post_type=page_revision');
 	}
 
 	static function register_post_types() {
@@ -74,7 +76,7 @@ class BU_Version_Workflow {
 			'permalink_epmask' => EP_PERMALINK,
 			'can_export' => true,
 			'show_in_nav_menus' => false,
-			'show_in_menu' => true,  // Change to false once we get stuff setup right.
+			'show_in_menu' => false,  // Change to false once we get stuff setup right.
 		);
 
 		register_post_type('page_revision', $args);
@@ -129,6 +131,11 @@ class BU_Version_Workflow {
 
 		return $post;
 
+	}
+
+	static function page_row_actions($actions, $post) {
+		$actions['new version'] = sprintf('<a href="%s">New Version</a>', BU_Revision_Controller::get_URL($post));
+		return $actions;
 	}
 }
 
