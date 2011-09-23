@@ -16,6 +16,9 @@
 // add column to page revision listing that lists the parent.
 
 
+// $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
+
+
 class BU_Version_Workflow {
 
 	static function init() {
@@ -27,8 +30,13 @@ class BU_Version_Workflow {
 		add_filter('the_preview', array('BU_Version_Workflow', 'show_preview'), 12); // needs to come after the regular preview filter
 		add_filter('template_redirect', array('BU_Version_Workflow', 'redirect_preview'));
 		add_filter('page_row_actions', array('BU_Version_Workflow', 'page_row_actions'), 10, 2);
+		add_filter('parent_file', array('BU_Version_Workflow', 'parent_file'));
 
 		add_rewrite_tag('%revision%', '[^&]+'); // bring the revision id variable to life
+
+		//add_filter('get_post_metadata', 'BU_Version_Workflow')
+
+		BU_Version_Roles::maybe_create();
 	}
 
 
@@ -36,10 +44,12 @@ class BU_Version_Workflow {
 
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
-		add_pages_page(null, 'Revisions', 'edit_pages', 'edit.php?post_type=page_revision');
+		add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
 	}
 
 	static function register_post_types() {
+
+		post_type_supports($post_type, $feature);
 
 		$labels = array(
 			'name' => _x('Page Revisions', 'post type general name'),
@@ -68,7 +78,7 @@ class BU_Version_Workflow {
 			'rewrite' => false,
 			'has_archive' => false,
 			'query_var' => true,
-			'supports' => array(), // copy support from the post_type
+			'supports' => array('editor', 'title', 'author', 'revisions' ), // copy support from the post_type
 			'taxonomies' => array(), // leave taxonomies to last
 			'show_ui' => true,
 			'menu_position' => null,
@@ -110,7 +120,6 @@ class BU_Version_Workflow {
 		}
 	}
 
-
 	static function show_preview($post) {
 		if ( ! is_object($post) )
 			return $post;
@@ -134,8 +143,17 @@ class BU_Version_Workflow {
 	}
 
 	static function page_row_actions($actions, $post) {
-		$actions['new version'] = sprintf('<a href="%s">New Version</a>', BU_Revision_Controller::get_URL($post));
+		if($post->post_status == 'publish') {
+			$actions['new_edit'] = sprintf('<a href="%s">New Edit</a>', BU_Revision_Controller::get_URL($post));
+		}
 		return $actions;
+	}
+
+	static function parent_file($file) {
+		if($file == 'edit.php?post_type=page_revision') {
+			return 'edit.php?post_type=page';
+		}
+		return $file;
 	}
 }
 
@@ -230,6 +248,39 @@ class BU_Revision {
 
 }
 
+class BU_Version_Roles {
+
+	// need to figure out the *best* way to create roles
+	static public function maybe_create() {
+		$role = get_role( 'content_editor' );
+
+
+		if(empty($role)) {
+			add_role('content_editor', 'Content Editor');
+		}
+
+		$role = get_role('content_editor');
+		$role->remove_cap('edit_published_pages');
+		$role->add_cap('manage_training_manager');
+		$role->add_cap('upload_files');
+		$role->add_cap('edit_posts');
+		$role->add_cap('edit_others_posts');
+		$role->add_cap('read');
+		$role->add_cap('edit_pages');
+		$role->add_cap('delete_pages');
+		$role->add_cap('delete_others_pages');
+		$role->add_cap('delete_posts');
+		$role->add_cap('delete_others_posts');
+		$role->add_cap('delete_private_posts');
+		$role->add_cap('edit_private_posts');
+		$role->add_cap('read_private_posts');
+		$role->add_cap('edit_private_pages');
+		$role->add_cap('read_private_pages');
+		$role->add_cap('delete_posts');
+		$role->add_cap('unfiltered_html');
+	}
+
+}
 
 
 class BU_Revision_Workflow_Admin {
