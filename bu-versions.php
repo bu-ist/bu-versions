@@ -36,6 +36,10 @@ class BU_Version_Workflow {
 
 		//add_filter('get_post_metadata', 'BU_Version_Workflow')
 
+		add_filter('map_meta_cap', array('BU_Section_Editor', 'map_meta_cap'), 10, 4);
+
+		add_action('save_post', array('BU_Version_Workflow', 'save_editors'), 10, 2);
+
 		BU_Version_Roles::maybe_create();
 	}
 
@@ -71,7 +75,7 @@ class BU_Version_Workflow {
 			'description' => '',
 			'publicly_queryable' => true,
 			'exclude_from_search' => false,
-			'capability_type' => 'page',
+			'capability_type' => 'post',
 			'capabilities' => array(), // need to figure out the capabilities piece
 			'map_meta_cap' => null,
 			'hierarchical' => false,
@@ -86,7 +90,7 @@ class BU_Version_Workflow {
 			'permalink_epmask' => EP_PERMALINK,
 			'can_export' => true,
 			'show_in_nav_menus' => false,
-			'show_in_menu' => false,  // Change to false once we get stuff setup right.
+			'show_in_menu' => false,
 		);
 
 		register_post_type('page_revision', $args);
@@ -94,7 +98,7 @@ class BU_Version_Workflow {
 
 	static function register_meta_boxes($post_type, $position, $post) {
 		add_meta_box('bu_new_version', 'New Version', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
-
+		add_meta_box('bu_editors', 'Section Editors', array('BU_Version_Workflow', 'editors_meta_box'), 'page', 'normal', 'high');
 	}
 
 	static function new_version_meta_box($post) {
@@ -105,6 +109,32 @@ class BU_Version_Workflow {
 		include('interface/page-edits.php');
 
 		$GLOBALS['post'] = $original_post;
+	}
+
+	/**
+	 * THIS IS TEMPORARY. MUST BE REPLACED.
+	 */
+	static function editors_meta_box($post) {
+		$editors = get_post_meta($post->ID, '_bu_editors', true);
+		if(!empty($editors)) {
+			$editors_value = join(',', $editors);
+		}
+
+		printf('<input class="widefat" type="text" name="bu_editors" value="%s">', esc_attr($editors_value));
+
+	}
+
+	/**
+	 * THIS IS TEMPORARY. MUST BE REPLACED.
+	 */
+	static function save_editors($post_id, $post) {
+		if($post->post_type !== 'page') return;
+
+		$editors = explode(',', $_POST['bu_editors']);
+
+		if(empty($editors)) $editors = '';
+
+		update_post_meta($post_id, '_bu_editors', $editors);
 	}
 
 	static function redirect_preview() {
@@ -254,7 +284,6 @@ class BU_Version_Roles {
 	static public function maybe_create() {
 		$role = get_role( 'content_editor' );
 
-
 		if(empty($role)) {
 			add_role('content_editor', 'Content Editor');
 		}
@@ -278,7 +307,71 @@ class BU_Version_Roles {
 		$role->add_cap('read_private_pages');
 		$role->add_cap('delete_posts');
 		$role->add_cap('unfiltered_html');
+
+
+		/** Temporary **/
+		$role = get_role('section_editor');
+		if(empty($role)) {
+			add_role('section_editor', 'Section Editor');
+		}
+
+		$role = get_role('section_editor');
+		$role->add_cap('manage_training_manager');
+		$role->add_cap('upload_files');
+		$role->add_cap('read');
+		$role->add_cap('edit_pages');
+		$role->add_cap('edit_others_pages');
+		$role->add_cap('edit_published_pages');
+		$role->add_cap('publish_pages');
+		$role->remove_cap('delete_pages');
+		$role->remove_cap('delete_others_pages');
+		$role->remove_cap('delete_published_pages');
+		$role->remove_cap('delete_pages');
+		$role->remove_cap('delete_others_pages');
+
+		$role->add_cap('edit_private_posts');
+		$role->add_cap('read_private_posts');
+		$role->add_cap('edit_private_pages');
+		$role->add_cap('read_private_pages');
+
+		$role->add_cap('unfiltered_html');
 	}
+
+}
+
+class BU_Section_Editor {
+
+
+	static function can_edit($post_id, $user_id)  {
+		$user = get_userdata($user_id);
+		if(in_array('section_editor', $user->roles)) {
+			$post = get_post($post_id);
+			$editors = (array) get_post_meta($post_id, '_bu_editors', true);
+			if(in_array($user_id, $editors)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+
+	static function map_meta_cap($caps, $cap, $user_id, $args) {
+
+		if($cap == 'edit_page') {
+			$post_id = $args[0];
+			if($post_id && !BU_Section_Editor::can_edit($post_id, $user_id)) {
+				$caps = array('do_not_allow');
+			}
+		}
+		return $caps;
+	}
+}
+
+
+class BU_Content_Groups {
 
 }
 
