@@ -49,6 +49,7 @@ class BU_Version_Workflow {
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
 		add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
+		add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Version_Workflow', 'manage_groups_screen'));
 	}
 
 	static function register_post_types() {
@@ -97,7 +98,7 @@ class BU_Version_Workflow {
 	}
 
 	static function register_meta_boxes($post_type, $position, $post) {
-		add_meta_box('bu_new_version', 'New Version', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
+		add_meta_box('bu_new_version', 'Other Versions', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
 		add_meta_box('bu_editors', 'Section Editors', array('BU_Version_Workflow', 'editors_meta_box'), 'page', 'normal', 'high');
 	}
 
@@ -111,6 +112,9 @@ class BU_Version_Workflow {
 		$GLOBALS['post'] = $original_post;
 	}
 
+	static function manage_groups_screen() {
+		include('interface/groups-edit.php');
+	}
 	/**
 	 * THIS IS TEMPORARY. MUST BE REPLACED.
 	 */
@@ -300,7 +304,7 @@ class BU_Version_Roles {
 			add_role('lead_editor', 'Lead Editor');
 		}
 
-		$role = get_role('content_editor');
+		$role = get_role('lead_editor');
 		$role->remove_cap('edit_published_pages');
 		$role->add_cap('manage_training_manager');
 		$role->add_cap('upload_files');
