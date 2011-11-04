@@ -7,13 +7,39 @@
  Author: Boston University (IS&T)
 */
 
-// need to find a home for the revision listing (I think?)
-// need to hijack the publishing of a new version and redirect back to the original page
-
-
 // add action link to the page listing
 // add a column that lists active
 // add column to page revision listing that lists the parent.
+
+/**
+ * consider removing the ability to create multiple versions. focus one version to add value.
+ * need three screens:
+ *	1) New Group
+ *  2) Groups
+ *  3) Edit Group
+ *
+ * --- Groups ---
+ *
+ * 1) Users added / removed / role changed
+ * 2) Role removed
+ * 3) Groups created, updated, deleted
+ * 4) Group needs unique ID
+ * Should a group be a post_type or a serialized option?
+ *
+ *  Each group needs a unique ID.
+ *
+ *
+ * - deleting a group
+ *
+ *
+ * Groups get attached to pages via postmeta
+ * Rely on post ancestors to find ACL.
+ *
+ *
+ * Should groups be user meta data?
+ */
+
+
 
 
 // $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
@@ -50,6 +76,8 @@ class BU_Version_Workflow {
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
 		add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
 		add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Version_Workflow', 'manage_groups_screen'));
+
+		// need to add column for orginal: Post Title
 	}
 
 	static function register_post_types() {
@@ -193,6 +221,8 @@ class BU_Version_Workflow {
 
 add_action('init', array('BU_Version_Workflow', 'init'));
 
+
+// add class that can be used for each post_type
 
 
 class BU_Revision_Controller {
@@ -372,7 +402,15 @@ class BU_Section_Editor {
 		return true;
 	}
 
-
+	/**
+	 * Filter that modifies the caps based on the current state.
+	 *
+	 * @param type $caps
+	 * @param type $cap
+	 * @param type $user_id
+	 * @param type $args
+	 * @return string
+	 */
 	static function map_meta_cap($caps, $cap, $user_id, $args) {
 		//var_dump($cap);
 
@@ -402,7 +440,7 @@ class BU_Section_Editor {
 				$caps = array('do_not_allow');
 			}
 		}
-		if($cap == 'edit_page_revisioncd') {
+		if($cap == 'edit_page_revision') {
 			$revision = get_post($post_id);
 
 			if(!$revision || ($revision->post_author != $user_id && !BU_Section_Editor::can_edit($revision->post_parent, $user_id))) {
@@ -415,16 +453,7 @@ class BU_Section_Editor {
 }
 
 
-class BU_Content_Groups {
 
-}
-
-
-class BU_Revision_Workflow_Admin {
-
-
-
-}
 
 
 
