@@ -11,8 +11,9 @@
 
 			<h3>Sections</h3>
 
-			<input class="button-primary" type="submit" value="Add New Group">
+			<input class="button-primary" type="submit" value="Update Group">
 		</form>
 	</div>
 
 </div>
+

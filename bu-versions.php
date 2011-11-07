@@ -24,19 +24,21 @@
  * 2) Role removed
  * 3) Groups created, updated, deleted
  * 4) Group needs unique ID
- * Should a group be a post_type or a serialized option?
- *
- *  Each group needs a unique ID.
  *
  *
- * - deleting a group
+ * Each groups is a post in a custom post type..
+ * Groups that a user belongs to are stored in usermeta.
  *
  *
- * Groups get attached to pages via postmeta
- * Rely on post ancestors to find ACL.
+ * Get groups. (WP_Query)
+ * Build page tree with groups attached.
+ *
+ * Groups get attached to pages via postmeta.
+ * Two meta_keys _bu_edit_group
+ *
+ * What is the best approach for checking ACL for all ancestors?
  *
  *
- * Should groups be user meta data?
  */
 
 
@@ -45,10 +47,17 @@
 // $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
 
 
+require_once('classes.groups.php');
+require_once('admin.groups.php');
+
+
 class BU_Version_Workflow {
 
 	static function init() {
+		global $bu_edit_groups;
+
 		self::register_post_types();
+
 		add_action('do_meta_boxes', array('BU_Version_Workflow', 'register_meta_boxes'), 10, 3);
 		add_action('admin_menu', array('BU_Version_Workflow', 'admin_menu'));
 		add_action('load-admin_page_bu_create_revision', array('BU_Revision_Controller', 'load_create_revision'));
@@ -60,13 +69,13 @@ class BU_Version_Workflow {
 
 		add_rewrite_tag('%revision%', '[^&]+'); // bring the revision id variable to life
 
-		//add_filter('get_post_metadata', 'BU_Version_Workflow')
-
 		add_filter('map_meta_cap', array('BU_Section_Editor', 'map_meta_cap'), 10, 4);
 
-		add_action('save_post', array('BU_Version_Workflow', 'save_editors'), 10, 2);
+		add_action('save_post', array('BU_Groups_Admin', 'save_editors'), 10, 2);
 
 		BU_Version_Roles::maybe_create();
+
+
 	}
 
 
@@ -75,7 +84,12 @@ class BU_Version_Workflow {
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
 		add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
-		add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Version_Workflow', 'manage_groups_screen'));
+		$hook = add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Groups_Admin', 'manage_groups_screen'));
+		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_manage_groups'), 1);
+
+		$hook = add_users_page('Add New Group', 'Add New Group', 'promote_users', 'add_group', array('BU_Groups_Admin', 'add_group_screen'));
+		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_add_group'), 1);
+
 
 		// need to add column for orginal: Post Title
 	}
@@ -127,7 +141,7 @@ class BU_Version_Workflow {
 
 	static function register_meta_boxes($post_type, $position, $post) {
 		add_meta_box('bu_new_version', 'Other Versions', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
-		add_meta_box('bu_editors', 'Section Editors', array('BU_Version_Workflow', 'editors_meta_box'), 'page', 'normal', 'high');
+		add_meta_box('bu_editors', 'Section Editors', array('BU_Groups_Admin', 'editors_meta_box'), 'page', 'normal', 'high');
 	}
 
 	static function new_version_meta_box($post) {
@@ -138,35 +152,6 @@ class BU_Version_Workflow {
 		include('interface/page-edits.php');
 
 		$GLOBALS['post'] = $original_post;
-	}
-
-	static function manage_groups_screen() {
-		include('interface/groups-edit.php');
-	}
-	/**
-	 * THIS IS TEMPORARY. MUST BE REPLACED.
-	 */
-	static function editors_meta_box($post) {
-		$editors = get_post_meta($post->ID, '_bu_editors', true);
-		if(!empty($editors)) {
-			$editors_value = join(',', $editors);
-		}
-
-		printf('<input class="widefat" type="text" name="bu_editors" value="%s">', esc_attr($editors_value));
-
-	}
-
-	/**
-	 * THIS IS TEMPORARY. MUST BE REPLACED.
-	 */
-	static function save_editors($post_id, $post) {
-		if($post->post_type !== 'page') return;
-
-		$editors = explode(',', $_POST['bu_editors']);
-
-		if(empty($editors)) $editors = '';
-
-		update_post_meta($post_id, '_bu_editors', $editors);
 	}
 
 	static function redirect_preview() {
@@ -388,11 +373,22 @@ class BU_Section_Editor {
 
 
 	static function can_edit($post_id, $user_id)  {
+
+		if($user_id == 0) return false;
+
 		$user = get_userdata($user_id);
-		if(in_array('section_editor', $user->roles)) {
-			$post = get_post($post_id);
-			$editors = (array) get_post_meta($post_id, '_bu_editors', true);
-			if(in_array($user_id, $editors)) {
+
+		if($user && in_array('section_editor', $user->roles)) {
+			$post = get_post($post_id); // get ancestors
+			$editors = get_post_meta($post_id, '_bu_editors', true);
+
+			if(empty($editors)) {
+				// should be optimized
+				$ancestors = get_post_ancestors($post);
+				// look for groups
+			}
+
+			if(in_array($user_id, (array) $editors)) {
 				return true;
 			} else {
 				return false;
@@ -412,7 +408,6 @@ class BU_Section_Editor {
 	 * @return string
 	 */
 	static function map_meta_cap($caps, $cap, $user_id, $args) {
-		//var_dump($cap);
 
 		$post_id = $args[0];
 		if($cap == 'edit_page') {
