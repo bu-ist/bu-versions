@@ -39,7 +39,7 @@ class BU_Edit_Groups {
 	public function update_group($id, $args = array()) {
 		$group = $this->get($id);
 		if($group) {
-			$group->update_group($args);
+			$group->update($args);
 		}
 	}
 
@@ -144,6 +144,10 @@ class BU_Edit_Group {
 		);
 
 		$updated = array_merge($current, $args);
+
+		$this->name = $updated['name'];
+		$this->description = $updated['description'];
+		$this->users = $updated['users'];
 	}
 
 
