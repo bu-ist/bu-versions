@@ -31,6 +31,7 @@
  *
  *
  * Get groups. (WP_Query)
+ *
  * Build page tree with groups attached.
  *
  * Groups get attached to pages via postmeta.
@@ -141,7 +142,6 @@ class BU_Version_Workflow {
 
 	static function register_meta_boxes($post_type, $position, $post) {
 		add_meta_box('bu_new_version', 'Other Versions', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
-		add_meta_box('bu_editors', 'Section Editors', array('BU_Groups_Admin', 'editors_meta_box'), 'page', 'normal', 'high');
 	}
 
 	static function new_version_meta_box($post) {
@@ -379,20 +379,23 @@ class BU_Section_Editor {
 		$user = get_userdata($user_id);
 
 		if($user && in_array('section_editor', $user->roles)) {
-			$post = get_post($post_id); // get ancestors
-			$editors = get_post_meta($post_id, '_bu_editors', true);
-
-			if(empty($editors)) {
-				// should be optimized
-				$ancestors = get_post_ancestors($post);
-				// look for groups
-			}
-
-			if(in_array($user_id, (array) $editors)) {
+			$post = get_post($post_id, OBJECT, null);
+			$groups = get_post_meta($post_id, 'bu_group');
+			$edit_groups_o = BU_Edit_Groups::get_instance();
+			if($edit_groups_o->has_user($groups, $user_id)) {
 				return true;
 			} else {
-				return false;
+				$ancestors = get_post_ancestors($post);
+				// iterate through ancestors; needs to be optimized
+				foreach(array_reverse($ancestors) as $ancestor_id) {
+					$groups = get_post_meta($ancestor_id, 'bu_group');
+					if($edit_groups_o->has_user($groups, $user_id)) {
+						return true;
+					}
+				}
 			}
+
+			return false;
 		}
 
 		return true;
@@ -446,10 +449,6 @@ class BU_Section_Editor {
 		return $caps;
 	}
 }
-
-
-
-
 
 
 ?>

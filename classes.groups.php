@@ -1,13 +1,28 @@
 <?php
 /**
- * Consider to create separate tables?
- * Should groups be stored as usermeta data?
- **/
+ * @todo store groups as posts in a custom post type.
+ *
+ *
+ * 
+ */
 
 class BU_Edit_Groups {
 
 	public $option_name = '_bu_section_groups';
 	public $groups = array();
+
+	static protected $instance;
+
+	protected function __construct() {
+		$this->load();
+	}
+
+	static public function get_instance() {
+		if(!isset(BU_Edit_Groups::$instance)) {
+			BU_Edit_Groups::$instance = new BU_Edit_Groups();
+		}
+		return BU_Edit_Groups::$instance;
+	}
 
 	public function add(BU_Edit_Group $group) {
 		array_push($this->groups, $group);
@@ -70,6 +85,17 @@ class BU_Edit_Groups {
 		}
 	}
 
+	public function has_user($groups, $user_id) {
+
+			foreach($groups as $group_id) {
+				$group = $this->get($group_id);
+				if($group->has_user($user_id)) {
+					return true;
+				}
+			}
+
+			return false;
+	}
 }
 
 // class for listing groups (designed to be extended)
@@ -79,8 +105,8 @@ class BU_Groups_List {
 	public $current_group;
 	public $edit_groups;
 
-	function __construct(BU_Edit_Groups $groups) {
-		$this->edit_groups = $groups;
+	function __construct() {
+		$this->edit_groups = BU_Edit_Groups::get_instance();
 		$this->current_group = -1;
 	}
 

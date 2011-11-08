@@ -3,13 +3,12 @@
 
 class BU_Groups_Admin {
 
-	static $edit_groups = null;
 
 
 	static function load_add_group() {
 
 		if($_POST['action'] == 'add') {
-			$groups = self::get_groups();
+			$groups = BU_Edit_Groups::get_instance();
 
 			$args = array(
 				'name' => strip_tags(trim($_POST['name'])),
@@ -29,14 +28,6 @@ class BU_Groups_Admin {
 
 	}
 
-	static function get_groups() {
-		if(is_null(self::$edit_groups)) {
-			self::$edit_groups = new BU_Edit_Groups();
-			self::$edit_groups->load();
-		}
-
-		return self::$edit_groups;
-	}
 
 	static function add_group_screen() {
 		//if(isset());
@@ -46,7 +37,7 @@ class BU_Groups_Admin {
 	static function load_manage_groups() {
 		if($_POST['action'] == 'update') {
 
-			$groups = self::get_groups();
+			$groups = BU_Edit_Groups::get_instance();
 
 			$args = array(
 				'name' => strip_tags(trim($_POST['name'])),
@@ -70,13 +61,14 @@ class BU_Groups_Admin {
 	}
 
 	static function manage_groups_screen() {
-		$groups = self::get_groups();
+
+		$groups = BU_Edit_Groups::get_instance();
 		if($_GET['action'] == 'edit' || $_POST['action'] == 'edit') {
 			$group = $groups->get((int) $_GET['id']);
 			include('interface/group-edit.php');
 
 		} else {
-			$group_list = new BU_Groups_List(self::$edit_groups);
+			$group_list = new BU_Groups_List();
 			include('interface/groups.php');
 		}
 	}
@@ -89,34 +81,6 @@ class BU_Groups_Admin {
 		return $url;
 
 	}
-	/**
-	 * THIS IS TEMPORARY. MUST BE REPLACED.
-	 */
-	static function editors_meta_box($post) {
-		$editors = get_post_meta($post->ID, '_bu_editors', true);
-		if(!empty($editors)) {
-			$editors_value = join(',', $editors);
-		}
-
-		printf('<input class="widefat" type="text" name="bu_editors" value="%s">', esc_attr($editors_value));
-
-	}
-
-	/**
-	 * THIS IS TEMPORARY. MUST BE REPLACED.
-	 */
-	static function save_editors($post_id, $post) {
-		if($post->post_type !== 'page') return;
-
-		$editors = explode(',', $_POST['bu_editors']);
-
-		if(empty($editors[0])) {
-			delete_post_meta($post_id, '_bu_editors');
-		} else {
-			update_post_meta($post_id, '_bu_editors', $editors);
-		}
-	}
-
 
 	static function user_checkboxes($current = array()) {
 
