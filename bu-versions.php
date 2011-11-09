@@ -117,10 +117,10 @@ class BU_Version_Workflow {
 		$args = array(
 			'labels' => $labels,
 			'description' => '',
-			'publicly_queryable' => true,
+			'publicly_queryable' => false,
 			'exclude_from_search' => false,
 			'capability_type' => 'page_revision',
-			'capabilities' => array(), // need to figure out the capabilities piece
+			//'capabilities' => array(), // need to figure out the capabilities piece
 			'map_meta_cap' => null,
 			'hierarchical' => false,
 			'rewrite' => false,
@@ -129,6 +129,7 @@ class BU_Version_Workflow {
 			'supports' => array('editor', 'title', 'author', 'revisions' ), // copy support from the post_type
 			'taxonomies' => array(), // leave taxonomies to last
 			'show_ui' => true,
+			'show_in_menu' => false,
 			'menu_position' => null,
 			'menu_icon' => null,
 			'permalink_epmask' => EP_PERMALINK,
@@ -308,6 +309,7 @@ class BU_Version_Roles {
 		$role->add_cap('edit_others_page_revisions');
 		$role->add_cap('edit_published_page_revisions');
 		$role->add_cap('publish_page_revisions');
+		$role->add_cap('read_page_revision');
 		$role->add_cap('edit_page_revision');
 		$role->add_cap('delete_page_revisions');
 		$role->add_cap('delete_others_page_revisions');
@@ -326,6 +328,7 @@ class BU_Version_Roles {
 		$role->add_cap('edit_posts');
 		$role->add_cap('read');
 		$role->add_cap('delete_posts');
+		$role->add_cap('read_page_revision');
 		$role->add_cap('read_private_posts');
 		$role->add_cap('read_private_pages');
 		$role->add_cap('unfiltered_html');
@@ -360,6 +363,7 @@ class BU_Version_Roles {
 
 		$role->add_cap('edit_page_revisions');
 
+		$role->add_cap('read_page_revision');
 		$role->add_cap('edit_page_revision');
 		$role->add_cap('delete_page_revisions');
 		$role->add_cap('publish_page_revisions');
