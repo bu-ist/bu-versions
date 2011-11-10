@@ -39,6 +39,8 @@
  *
  * What is the best approach for checking ACL for all ancestors?
  *
+ * New Page Revision has to be dealt with. (perhaps with a css+js hack)
+ * or/ can the page listing + revision listing combined into a single view.
  *
  */
 
@@ -84,7 +86,7 @@ class BU_Version_Workflow {
 
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
-		add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
+		//add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
 		$hook = add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Groups_Admin', 'manage_groups_screen'));
 		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_manage_groups'), 1);
 
@@ -92,6 +94,9 @@ class BU_Version_Workflow {
 		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_add_group'), 1);
 
 
+		add_filter('views_edit-page', array('BU_Version_Workflow', 'filter_page_status_buckets'));
+
+		add_filter('views_edit-page_revision', array('BU_Version_Workflow', 'filter_revision_status_buckets'));
 		// need to add column for orginal: Post Title
 	}
 
@@ -167,6 +172,21 @@ class BU_Version_Workflow {
 			exit();
 		}
 	}
+
+
+	static function filter_page_status_buckets($views) {
+
+		// need to handle counts
+		$views['pending_edits'] = '<a href="edit.php?post_type=page_revision">Pending Edits</a>';
+		$views['edits_pending_review'] = '<a href="edit.php?post_type=page_revision&amp;post_status=pending">Edits to Review</a>';
+		return $views;
+	}
+
+	static function filter_revision_status_buckets($views) {
+		$views['all pages'] = '<a href="edit.php?post_type=page">All Pages</a>';
+		return $views;
+	}
+
 
 	static function show_preview($post) {
 		if ( ! is_object($post) )
