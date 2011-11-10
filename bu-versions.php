@@ -42,7 +42,7 @@
  *
  */
 
-
+/// $views = apply_filters( 'views_' . $screen->id, $views );  // can be used to filter the views (All | Drafts | etc...
 
 
 // $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
