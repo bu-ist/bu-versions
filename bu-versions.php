@@ -87,7 +87,7 @@ class BU_Version_Workflow {
 
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
-		//add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
+		add_pages_page(null, 'Edits', 'edit_pages', 'edit.php?post_type=page_revision');
 		$hook = add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Groups_Admin', 'manage_groups_screen'));
 		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_manage_groups'), 1);
 
@@ -110,18 +110,18 @@ class BU_Version_Workflow {
 		post_type_supports($post_type, $feature);
 
 		$labels = array(
-			'name' => _x('Page Revisions', 'post type general name'),
-			'singular_name' => _x('Page Revision', 'post type singular name'),
+			'name' => _x('Page Edits', 'post type general name'),
+			'singular_name' => _x('Page Edit', 'post type singular name'),
 			'add_new' => _x('Add New', ''),
-			'add_new_item' => __('Add New Page Revision'),
-			'edit_item' => __('Edit Page Revision'),
-			'new_item' => __('New Page Revisions'),
-			'view_item' => __('View Page Revision'),
-			'search_items' => __('Search Page Revisions'),
-			'not_found' =>  __('No Page Revisions found'),
-			'not_found_in_trash' => __('No Page Revisions found in Trash'),
+			'add_new_item' => __('Add New Page Edit'),
+			'edit_item' => __('Edit Page Edit'),
+			'new_item' => __('New Page Edits'),
+			'view_item' => __('View Page Edit'),
+			'search_items' => __('Search Page Edits'),
+			'not_found' =>  __('No Page Edits found'),
+			'not_found_in_trash' => __('No Page Edits found in Trash'),
 			'parent_item_colon' => '',
-			'menu_name' => 'Page Revisions'
+			'menu_name' => 'Page Edits'
 		);
 
 		$args = array(
@@ -182,13 +182,13 @@ class BU_Version_Workflow {
 	static function filter_page_status_buckets($views) {
 
 		// need to handle counts
-		$views['pending_edits'] = '<a href="edit.php?post_type=page_revision">Pending Edits</a>';
+		$views['pending_edits'] = '<a href="edit.php?post_type=page_revision">Edits</a>';
 		$views['edits_pending_review'] = '<a href="edit.php?post_type=page_revision&amp;post_status=pending">Edits to Review</a>';
 		return $views;
 	}
 
 	static function filter_revision_status_buckets($views) {
-		$views['all pages'] = '<a href="edit.php?post_type=page">All Pages</a>';
+		//$views['all pages'] = '<a href="edit.php?post_type=page">All Pages</a>';
 		return $views;
 	}
 
@@ -243,7 +243,7 @@ class BU_Version_Workflow {
 		
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['pending_edit'] = 'Pending Edit';
+				$new_columns['pending_edit'] = 'Edits';
 			}
 			$new_columns[$key] = $columns[$key];	
 			$i++;
