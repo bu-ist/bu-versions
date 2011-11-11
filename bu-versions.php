@@ -26,9 +26,7 @@
  * 4) Group needs unique ID
  *
  *
- * Each groups is a post in a custom post type..
- * Groups that a user belongs to are stored in usermeta.
- *
+ * Each group is a post in a custom post type..
  *
  * Get groups. (WP_Query)
  *
@@ -41,6 +39,11 @@
  *
  * New Page Revision has to be dealt with. (perhaps with a css+js hack)
  * or/ can the page listing + revision listing combined into a single view.
+ *
+ *
+ * Perhaps alternate version should be captured as postmeta, too?
+ *
+ * Try adding a column for the new version.
  *
  */
 
@@ -74,8 +77,6 @@ class BU_Version_Workflow {
 
 		add_filter('map_meta_cap', array('BU_Section_Editor', 'map_meta_cap'), 10, 4);
 
-		add_action('save_post', array('BU_Groups_Admin', 'save_editors'), 10, 2);
-
 		BU_Version_Roles::maybe_create();
 
 
@@ -93,7 +94,11 @@ class BU_Version_Workflow {
 		$hook = add_users_page('Add New Group', 'Add New Group', 'promote_users', 'add_group', array('BU_Groups_Admin', 'add_group_screen'));
 		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_add_group'), 1);
 
-
+		add_filter('manage_edit-page_sortable_columns', array('BU_Version_Workflow', 'page_sortable_columns'));
+		add_filter('manage_page_posts_columns', array('BU_Version_Workflow', 'page_posts_columns'));
+		add_action('manage_page_posts_custom_column', array('BU_Version_Workflow', 'page_column'));
+		add_filter('manage_page_revision_posts_columns', array('BU_Version_Workflow', 'page_revision_columns'));
+		add_action('manage_page_revision_posts_custom_column', array('BU_Version_Workflow', 'page_revision_column'));
 		add_filter('views_edit-page', array('BU_Version_Workflow', 'filter_page_status_buckets'));
 
 		add_filter('views_edit-page_revision', array('BU_Version_Workflow', 'filter_revision_status_buckets'));
@@ -209,10 +214,69 @@ class BU_Version_Workflow {
 		return $post;
 
 	}
+	
+	static function page_revision_columns($columns) {
+
+		$insertion_point = 3;
+		$i = 1;
+		
+		foreach($columns as $key => $value) {
+			if($i == $insertion_point) {
+				$new_columns['original_edit'] = 'Original';
+			}
+			$new_columns[$key] = $columns[$key];	
+			$i++;
+		}	
+
+		return $new_columns;
+	}
+
+	static function page_revision_column() {
+		global $post;
+
+		echo '<a href="' . get_edit_post_link( $post->post_parent, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>';
+	}
+	static function page_posts_columns($columns) {
+
+		$insertion_point = 3;
+		$i = 1;
+		
+		foreach($columns as $key => $value) {
+			if($i == $insertion_point) {
+				$new_columns['pending_edit'] = 'Pending Edit';
+			}
+			$new_columns[$key] = $columns[$key];	
+			$i++;
+		}	
+
+		return $new_columns;
+	}
+
+	static function page_column() {
+		global $post;
+
+		$revision_id = get_post_meta($post->ID, '_bu_revision', true);
+		if(!empty($revision_id)) {
+			echo '<a href="' . get_edit_post_link( $revision_id, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>' . ' | preview';
+} 
+		// Perhaps a preview link makes sense?
+	}
+
+	static function page_sortable_columns($columns) {
+//		var_dump($columns);
+		return $columns;
+	}
 
 	static function page_row_actions($actions, $post) {
 		if($post->post_status == 'publish') {
-			$actions['new_edit'] = sprintf('<a href="%s">New Edit</a>', BU_Revision_Controller::get_URL($post));
+			$revision = get_post_meta($post->ID, '_bu_revision', true);
+
+			// need to add current_user_can()
+			if(empty($revision)) {
+				$actions['new_edit'] = sprintf('<a href="%s">Create New Version</a>', BU_Revision_Controller::get_URL($post));
+			} else {
+				$actions['existing_edit'] = '<a href="' . get_edit_post_link( $revision, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'Edit New Version' ) . '</a>';
+			}
 		}
 		return $actions;
 	}
@@ -254,6 +318,10 @@ class BU_Revision_Controller {
 	}
 
 
+	static function has_revision() {
+
+	}
+
 	// GET handler used to create a revision
 	static function load_create_revision() {
 		if(wp_verify_nonce($_GET['_wpnonce'], 'create_revision')) {
@@ -274,6 +342,8 @@ class BU_Revision_Controller {
 			$new_version['post_title'] = $post['post_title'];
 			$new_version['post_excerpt'] = $post['post_excerpt'];
 			$id = wp_insert_post($new_version);
+
+			update_post_meta($post['ID'], '_bu_revision', $id);
 
 			$redirect_url = add_query_arg(array('post' => $id, 'post_type' => 'page_revision', 'action' => 'edit'), 'post.php');
 			wp_redirect($redirect_url);
@@ -297,8 +367,22 @@ class BU_Revision {
 		$this->new_version = $post;
 		$this->original = get_post($this->new_version->post_parent);
 	}
-
+	
+	/**
+	 * @todo finish
+	 **/
 	function create() {
+		$new_version['post_type'] = 'page_revision';
+		$new_version['post_parent'] = $post['ID'];
+		$new_version['ID'] = null;
+		$new_version['post_status'] = 'draft';
+		$new_version['post_content'] = $post['post_content'];
+		$new_version['post_name'] = $post['post_name'];
+		$new_version['post_title'] = $post['post_title'];
+		$new_version['post_excerpt'] = $post['post_excerpt'];
+		$id = wp_insert_post($new_version);
+
+		update_post_meta($post['ID'], '_bu_revision', $id);
 
 	}
 
@@ -310,6 +394,7 @@ class BU_Revision {
 		$post['post_excerpt'] = $this->new_version->post_excerpt;
 		wp_update_post($post);
 		wp_delete_post($this->new_version->ID);
+		delete_post_meta($this->original->ID, '_bu_revision');
 	}
 
 	function get_original_edit_url() {
@@ -324,16 +409,23 @@ class BU_Version_Roles {
 	static public function maybe_create() {
 		$role = get_role('administrator');
 
-		$role->add_cap('edit_page_revision');
+		$role->add_cap('read_page_revisions');
 		$role->add_cap('edit_page_revisions');
 		$role->add_cap('edit_others_page_revisions');
 		$role->add_cap('edit_published_page_revisions');
 		$role->add_cap('publish_page_revisions');
-		$role->add_cap('read_page_revision');
-		$role->add_cap('edit_page_revision');
 		$role->add_cap('delete_page_revisions');
 		$role->add_cap('delete_others_page_revisions');
 		$role->add_cap('delete_published_page_revisions');
+
+		$role->add_cap('read_page_revision');
+		$role->add_cap('edit_page_revision');
+		$role->add_cap('edit_others_page_revision');
+		$role->add_cap('edit_published_page_revision');
+		$role->add_cap('publish_page_revision');
+		$role->add_cap('delete_page_revision');
+		$role->add_cap('delete_others_page_revision');
+		$role->add_cap('delete_published_page_revision');
 
 		$role = get_role( 'lead_editor' );
 
@@ -348,7 +440,12 @@ class BU_Version_Roles {
 		$role->add_cap('edit_posts');
 		$role->add_cap('read');
 		$role->add_cap('delete_posts');
-		$role->add_cap('read_page_revision');
+
+		$role->add_cap('read_page_revisions');
+		$role->add_cap('edit_page_revisions');
+		$role->add_cap('edit_others_page_revisions');
+		$role->add_cap('delete_page_revisions');
+
 		$role->add_cap('read_private_posts');
 		$role->add_cap('read_private_pages');
 		$role->add_cap('unfiltered_html');
@@ -381,14 +478,33 @@ class BU_Version_Roles {
 		$role->add_cap('edit_private_pages');
 		$role->add_cap('read_private_pages');
 
+		//need to add the special meta checks
+
+		$role->add_cap('read_page_revisions');
 		$role->add_cap('edit_page_revisions');
+		$role->add_cap('edit_others_page_revisions');
+		$role->add_cap('edit_published_page_revisions');
+		$role->add_cap('publish_page_revisions');
+		$role->add_cap('delete_page_revisions');
+		$role->add_cap('delete_others_page_revisions');
+		$role->add_cap('delete_published_page_revisions');
 
 		$role->add_cap('read_page_revision');
 		$role->add_cap('edit_page_revision');
-		$role->add_cap('delete_page_revisions');
-		$role->add_cap('publish_page_revisions');
+		$role->add_cap('edit_others_page_revision');
+		$role->add_cap('edit_published_page_revision');
+		$role->add_cap('publish_page_revision');
+		$role->add_cap('delete_page_revision');
+		$role->add_cap('delete_others_page_revision');
+		$role->add_cap('delete_published_page_revision');
 
 		$role->add_cap('unfiltered_html');
+
+				/** Temporary **/
+		$role = get_role('contributor');
+		if(empty($role)) {
+			add_role('contributor', 'Contributor');
+		}
 	}
 
 }
@@ -465,9 +581,9 @@ class BU_Section_Editor {
 		if($cap == 'edit_page_revision') {
 			$revision = get_post($post_id);
 
-			if(!$revision || ($revision->post_author != $user_id && !BU_Section_Editor::can_edit($revision->post_parent, $user_id))) {
-				$caps = array('do_not_allow');
-			}
+//			if(!$revision || ($revision->post_author != $user_id && !BU_Section_Editor::can_edit($revision->post_parent, $user_id))) {
+//				$caps = array('do_not_allow');
+//			}
 		}
 
 		return $caps;
