@@ -13,6 +13,8 @@
 
 /**
  * consider removing the ability to create multiple versions. focus one version to add value.
+ * add box for controlling which page the page replaces.
+ *
  * need three screens:
  *	1) New Group
  *  2) Groups
@@ -39,6 +41,7 @@
  *
  * New Page Revision has to be dealt with. (perhaps with a css+js hack)
  * or/ can the page listing + revision listing combined into a single view.
+ * -- there could be a way to attach a draft to a page
  *
  *
  * Perhaps alternate version should be captured as postmeta, too?
@@ -113,9 +116,9 @@ class BU_Version_Workflow {
 			'name' => _x('Page Edits', 'post type general name'),
 			'singular_name' => _x('Page Edit', 'post type singular name'),
 			'add_new' => _x('Add New', ''),
-			'add_new_item' => __('Add New Page Edit'),
-			'edit_item' => __('Edit Page Edit'),
-			'new_item' => __('New Page Edits'),
+			'add_new_item' => __('Add New Edit'),
+			'edit_item' => __('Edit Page'),
+			'new_item' => __('New'),
 			'view_item' => __('View Page Edit'),
 			'search_items' => __('Search Page Edits'),
 			'not_found' =>  __('No Page Edits found'),
@@ -127,7 +130,7 @@ class BU_Version_Workflow {
 		$args = array(
 			'labels' => $labels,
 			'description' => '',
-			'publicly_queryable' => false,
+			'publicly_queryable' => true,
 			'exclude_from_search' => false,
 			'capability_type' => 'page_revision',
 			//'capabilities' => array(), // need to figure out the capabilities piece
@@ -170,9 +173,7 @@ class BU_Version_Workflow {
 			$request = strtolower(trim($_SERVER['REQUEST_URI']));
 			$request = preg_replace('#\?.*$#', '', $request);
 			$revision_id = (int) get_query_var('p');
-			$revision = get_post($revision_id);
-			$url = add_query_arg(array('revision' => $revision->ID, 'preview'=> 'true', 'p' => $revision->post_parent, 'post_type' => 'page'), $request);
-
+			$url = BU_Revision_Controller::get_preview_URL($revision_id);
 			wp_redirect($url, 302);
 			exit();
 		}
@@ -183,7 +184,7 @@ class BU_Version_Workflow {
 
 		// need to handle counts
 		$views['pending_edits'] = '<a href="edit.php?post_type=page_revision">Edits</a>';
-		$views['edits_pending_review'] = '<a href="edit.php?post_type=page_revision&amp;post_status=pending">Edits to Review</a>';
+		//$views['edits_pending_review'] = '<a href="edit.php?post_type=page_revision&amp;post_status=pending">Edits to Review</a>';
 		return $views;
 	}
 
@@ -214,19 +215,19 @@ class BU_Version_Workflow {
 		return $post;
 
 	}
-	
+
 	static function page_revision_columns($columns) {
 
 		$insertion_point = 3;
 		$i = 1;
-		
+
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
 				$new_columns['original_edit'] = 'Original';
 			}
-			$new_columns[$key] = $columns[$key];	
+			$new_columns[$key] = $columns[$key];
 			$i++;
-		}	
+		}
 
 		return $new_columns;
 	}
@@ -240,14 +241,14 @@ class BU_Version_Workflow {
 
 		$insertion_point = 3;
 		$i = 1;
-		
+
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
 				$new_columns['pending_edit'] = 'Edits';
 			}
-			$new_columns[$key] = $columns[$key];	
+			$new_columns[$key] = $columns[$key];
 			$i++;
-		}	
+		}
 
 		return $new_columns;
 	}
@@ -257,9 +258,14 @@ class BU_Version_Workflow {
 
 		$revision_id = get_post_meta($post->ID, '_bu_revision', true);
 		if(!empty($revision_id)) {
-			echo '<a href="' . get_edit_post_link( $revision_id, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>' . ' | preview';
-} 
-		// Perhaps a preview link makes sense?
+			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($revision_id, true), esc_attr(__( 'Edit this item')));
+			print(" | ");
+			printf('<a href="%s" title="%s">view</a>', BU_Revision_Controller::get_preview_URL($revision_id), esc_attr(__('Preview this edit')));
+		} else {
+			if($post->post_status == 'publish') {
+				printf('<a href="%s">create</a>', BU_Revision_Controller::get_URL($post));
+			}
+		}
 	}
 
 	static function page_sortable_columns($columns) {
@@ -273,9 +279,9 @@ class BU_Version_Workflow {
 
 			// need to add current_user_can()
 			if(empty($revision)) {
-				$actions['new_edit'] = sprintf('<a href="%s">Create New Version</a>', BU_Revision_Controller::get_URL($post));
+				//$actions['new_edit'] = sprintf('<a href="%s">Create Edit</a>', BU_Revision_Controller::get_URL($post));
 			} else {
-				$actions['existing_edit'] = '<a href="' . get_edit_post_link( $revision, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'Edit New Version' ) . '</a>';
+				//$actions['existing_edit'] = '<a href="' . get_edit_post_link( $revision, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'Edit New Version' ) . '</a>';
 			}
 		}
 		return $actions;
@@ -301,6 +307,13 @@ class BU_Revision_Controller {
 		$url = 'admin.php?page=bu_create_revision';
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
 		return wp_nonce_url($url, 'create_revision');
+	}
+
+	static function get_preview_URL($revision_id) {
+		$revision = get_post($revision_id);
+		$permalink = get_permalink($revision);
+		$url = add_query_arg(array('revision' => $revision->ID, 'preview'=> 'true', 'p' => $revision->post_parent, 'post_type' => 'page'), $permalink);
+		return $url;
 	}
 
 	static function publish_revision($new_status, $old_status, $post) {
@@ -367,7 +380,7 @@ class BU_Revision {
 		$this->new_version = $post;
 		$this->original = get_post($this->new_version->post_parent);
 	}
-	
+
 	/**
 	 * @todo finish
 	 **/
