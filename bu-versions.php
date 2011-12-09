@@ -73,7 +73,6 @@ class BU_Version_Workflow {
 		add_action('transition_post_status', array('BU_Revision_Controller', 'publish_revision'), 10, 3);
 		add_filter('the_preview', array('BU_Version_Workflow', 'show_preview'), 12); // needs to come after the regular preview filter
 		add_filter('template_redirect', array('BU_Version_Workflow', 'redirect_preview'));
-		add_filter('page_row_actions', array('BU_Version_Workflow', 'page_row_actions'), 10, 2);
 		add_filter('parent_file', array('BU_Version_Workflow', 'parent_file'));
 
 		add_rewrite_tag('%revision%', '[^&]+'); // bring the revision id variable to life
@@ -90,22 +89,19 @@ class BU_Version_Workflow {
 
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
-		add_pages_page(null, 'Edits', 'edit_pages', 'edit.php?post_type=page_revision');
+		add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
 		$hook = add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Groups_Admin', 'manage_groups_screen'));
 		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_manage_groups'), 1);
 
 		$hook = add_users_page('Add New Group', 'Add New Group', 'promote_users', 'add_group', array('BU_Groups_Admin', 'add_group_screen'));
 		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_add_group'), 1);
 
-		add_filter('manage_edit-page_sortable_columns', array('BU_Version_Workflow', 'page_sortable_columns'));
 		add_filter('manage_page_posts_columns', array('BU_Version_Workflow', 'page_posts_columns'));
-		add_action('manage_page_posts_custom_column', array('BU_Version_Workflow', 'page_column'));
+		add_action('manage_page_posts_custom_column', array('BU_Version_Workflow', 'page_column'), 10, 2);
 		add_filter('manage_page_revision_posts_columns', array('BU_Version_Workflow', 'page_revision_columns'));
-		add_action('manage_page_revision_posts_custom_column', array('BU_Version_Workflow', 'page_revision_column'));
+		add_action('manage_page_revision_posts_custom_column', array('BU_Version_Workflow', 'page_revision_column'), 10, 2);
 		add_filter('views_edit-page', array('BU_Version_Workflow', 'filter_page_status_buckets'));
 
-		add_filter('views_edit-page_revision', array('BU_Version_Workflow', 'filter_revision_status_buckets'));
-		// need to add column for orginal: Post Title
 	}
 
 	static function register_post_types() {
@@ -117,7 +113,7 @@ class BU_Version_Workflow {
 			'singular_name' => _x('Page Edit', 'post type singular name'),
 			'add_new' => _x('Add New', ''),
 			'add_new_item' => __('Add New Edit'),
-			'edit_item' => __('Edit Page'),
+			'edit_item' => __('Pending Edit'),
 			'new_item' => __('New'),
 			'view_item' => __('View Page Edit'),
 			'search_items' => __('Search Page Edits'),
@@ -183,15 +179,10 @@ class BU_Version_Workflow {
 	static function filter_page_status_buckets($views) {
 
 		// need to handle counts
-		$views['pending_edits'] = '<a href="edit.php?post_type=page_revision">Edits</a>';
-		//$views['edits_pending_review'] = '<a href="edit.php?post_type=page_revision&amp;post_status=pending">Edits to Review</a>';
+		$views['pending_edits'] = '<a href="edit.php?post_type=page_revision">Pending Edits</a>';
 		return $views;
 	}
 
-	static function filter_revision_status_buckets($views) {
-		//$views['all pages'] = '<a href="edit.php?post_type=page">All Pages</a>';
-		return $views;
-	}
 
 
 	static function show_preview($post) {
@@ -232,9 +223,9 @@ class BU_Version_Workflow {
 		return $new_columns;
 	}
 
-	static function page_revision_column() {
-		global $post;
-
+	static function page_revision_column($column_name, $post_id) {
+		if($column_name != 'original_edit') return;
+		$post = get_post($post_id);
 		echo '<a href="' . get_edit_post_link( $post->post_parent, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>';
 	}
 	static function page_posts_columns($columns) {
@@ -244,7 +235,7 @@ class BU_Version_Workflow {
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['pending_edit'] = 'Edits';
+				$new_columns['pending_edit'] = 'Pending Edits';
 			}
 			$new_columns[$key] = $columns[$key];
 			$i++;
@@ -253,39 +244,21 @@ class BU_Version_Workflow {
 		return $new_columns;
 	}
 
-	static function page_column() {
-		global $post;
-
-		$revision_id = get_post_meta($post->ID, '_bu_revision', true);
+	static function page_column($column_name, $post_id) {
+		if($column_name != 'pending_edit') return;
+		$revision_id = get_post_meta($post_id, '_bu_revision', true);
 		if(!empty($revision_id)) {
 			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($revision_id, true), esc_attr(__( 'Edit this item')));
 			print(" | ");
 			printf('<a href="%s" title="%s">view</a>', BU_Revision_Controller::get_preview_URL($revision_id), esc_attr(__('Preview this edit')));
 		} else {
+			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
 				printf('<a href="%s">create</a>', BU_Revision_Controller::get_URL($post));
 			}
 		}
 	}
 
-	static function page_sortable_columns($columns) {
-//		var_dump($columns);
-		return $columns;
-	}
-
-	static function page_row_actions($actions, $post) {
-		if($post->post_status == 'publish') {
-			$revision = get_post_meta($post->ID, '_bu_revision', true);
-
-			// need to add current_user_can()
-			if(empty($revision)) {
-				//$actions['new_edit'] = sprintf('<a href="%s">Create Edit</a>', BU_Revision_Controller::get_URL($post));
-			} else {
-				//$actions['existing_edit'] = '<a href="' . get_edit_post_link( $revision, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'Edit New Version' ) . '</a>';
-			}
-		}
-		return $actions;
-	}
 
 	static function parent_file($file) {
 		if($file == 'edit.php?post_type=page_revision') {
@@ -330,10 +303,6 @@ class BU_Revision_Controller {
 
 	}
 
-
-	static function has_revision() {
-
-	}
 
 	// GET handler used to create a revision
 	static function load_create_revision() {
