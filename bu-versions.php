@@ -128,9 +128,9 @@ class BU_Version_Workflow {
 			'description' => '',
 			'publicly_queryable' => true,
 			'exclude_from_search' => false,
-			'capability_type' => 'page_revision',
+			'capability_type' => array('page_revision', 'page_revisions'),
 			//'capabilities' => array(), // need to figure out the capabilities piece
-			'map_meta_cap' => null,
+			'map_meta_cap' => true,
 			'hierarchical' => false,
 			'rewrite' => false,
 			'has_archive' => false,
@@ -389,6 +389,15 @@ class BU_Version_Roles {
 
 	// need to figure out the *best* way to create roles
 	static public function maybe_create() {
+
+		$role = get_role('administrator');
+
+		if(empty($role)) {
+			add_role('administrator', 'Administrator');
+			include( ABSPATH . '/wp-admin/includes/schema.php');// hack to add all roles if they were deleted.
+			populate_roles();
+		}
+
 		$role = get_role('administrator');
 
 		$role->add_cap('read_page_revisions');
@@ -400,15 +409,6 @@ class BU_Version_Roles {
 		$role->add_cap('delete_others_page_revisions');
 		$role->add_cap('delete_published_page_revisions');
 
-		$role->add_cap('read_page_revision');
-		$role->add_cap('edit_page_revision');
-		$role->add_cap('edit_others_page_revision');
-		$role->add_cap('edit_published_page_revision');
-		$role->add_cap('publish_page_revision');
-		$role->add_cap('delete_page_revision');
-		$role->add_cap('delete_others_page_revision');
-		$role->add_cap('delete_published_page_revision');
-
 		$role = get_role( 'lead_editor' );
 
 		if(empty($role)) {
@@ -416,17 +416,61 @@ class BU_Version_Roles {
 		}
 
 		$role = get_role('lead_editor');
-		$role->remove_cap('edit_published_pages');
 		$role->add_cap('manage_training_manager');
 		$role->add_cap('upload_files');
 		$role->add_cap('edit_posts');
 		$role->add_cap('read');
 		$role->add_cap('delete_posts');
 
+		$role->add_cap('moderate_comments');
+		$role->add_cap('manage_categories');
+		$role->add_cap('manage_links');
+		$role->add_cap('upload_files');
+		$role->add_cap('import');
+		$role->add_cap('unfiltered_html');
+		$role->add_cap('edit_posts');
+		$role->add_cap('edit_others_posts');
+		$role->add_cap('edit_published_posts');
+		$role->add_cap('publish_posts');
+		$role->add_cap('edit_pages');
+		$role->add_cap('read');
+		$role->add_cap('level_10');
+		$role->add_cap('level_9');
+		$role->add_cap('level_8');
+		$role->add_cap('level_7');
+		$role->add_cap('level_6');
+		$role->add_cap('level_5');
+		$role->add_cap('level_4');
+		$role->add_cap('level_3');
+		$role->add_cap('level_2');
+		$role->add_cap('level_1');
+		$role->add_cap('level_0');
+
+		$role->add_cap('edit_others_pages');
+		$role->add_cap('edit_published_pages');
+		$role->add_cap('publish_pages');
+		$role->add_cap('delete_pages');
+		$role->add_cap('delete_others_pages');
+		$role->add_cap('delete_published_pages');
+		$role->add_cap('delete_posts');
+		$role->add_cap('delete_others_posts');
+		$role->add_cap('delete_published_posts');
+		$role->add_cap('delete_private_posts');
+		$role->add_cap('edit_private_posts');
+		$role->add_cap('read_private_posts');
+		$role->add_cap('delete_private_pages');
+		$role->add_cap('edit_private_pages');
+		$role->add_cap('read_private_pages');
+
 		$role->add_cap('read_page_revisions');
 		$role->add_cap('edit_page_revisions');
 		$role->add_cap('edit_others_page_revisions');
+		$role->add_cap('edit_published_page_revisions');
+		$role->add_cap('publish_page_revisions');
 		$role->add_cap('delete_page_revisions');
+		$role->add_cap('delete_others_page_revisions');
+		$role->add_cap('delete_published_page_revisions');
+
 
 		$role->add_cap('read_private_posts');
 		$role->add_cap('read_private_pages');
@@ -443,24 +487,32 @@ class BU_Version_Roles {
 		$role->add_cap('manage_training_manager');
 		$role->add_cap('upload_files');
 
-		// shouldn't be able to delete files
 		$role->add_cap('read');
 		$role->add_cap('edit_pages');
 		$role->add_cap('edit_others_pages');
+
+		// the following roles are overriden by the section editor functionality
 		$role->add_cap('edit_published_pages');
 		$role->add_cap('publish_pages');
-		$role->remove_cap('delete_pages');
-		$role->remove_cap('delete_others_pages');
-		$role->remove_cap('delete_published_pages');
-		$role->remove_cap('delete_pages');
-		$role->remove_cap('delete_others_pages');
 
+		$role->add_cap('moderate_comments');
+		$role->add_cap('manage_categories');
+		$role->add_cap('manage_links');
+		$role->add_cap('upload_files');
+		$role->add_cap('edit_posts');
+		$role->add_cap('read');
+		$role->add_cap('level_7');
+		$role->add_cap('level_6');
+		$role->add_cap('level_5');
+		$role->add_cap('level_4');
+		$role->add_cap('level_3');
+		$role->add_cap('level_2');
+		$role->add_cap('level_1');
+		$role->add_cap('level_0');
 		$role->add_cap('edit_private_posts');
 		$role->add_cap('read_private_posts');
 		$role->add_cap('edit_private_pages');
 		$role->add_cap('read_private_pages');
-
-		//need to add the special meta checks
 
 		$role->add_cap('read_page_revisions');
 		$role->add_cap('edit_page_revisions');
@@ -471,15 +523,6 @@ class BU_Version_Roles {
 		$role->add_cap('delete_others_page_revisions');
 		$role->add_cap('delete_published_page_revisions');
 
-		$role->add_cap('read_page_revision');
-		$role->add_cap('edit_page_revision');
-		$role->add_cap('edit_others_page_revision');
-		$role->add_cap('edit_published_page_revision');
-		$role->add_cap('publish_page_revision');
-		$role->add_cap('delete_page_revision');
-		$role->add_cap('delete_others_page_revision');
-		$role->add_cap('delete_published_page_revision');
-
 		$role->add_cap('unfiltered_html');
 
 				/** Temporary **/
@@ -487,6 +530,21 @@ class BU_Version_Roles {
 		if(empty($role)) {
 			add_role('contributor', 'Contributor');
 		}
+
+		$role = get_role('contributor');
+		$role->add_cap('manage_training_manager');
+		$role->add_cap('upload_files');
+
+		$role->add_cap('read');
+		$role->add_cap('edit_pages');
+
+		$role->add_cap('read_page_revisions');
+		$role->add_cap('edit_page_revisions');
+		$role->add_cap('edit_others_page_revisions');
+		$role->add_cap('edit_published_page_revisions');
+		$role->add_cap('delete_page_revisions');
+
+		$role->add_cap('unfiltered_html');
 	}
 
 }
@@ -536,7 +594,9 @@ class BU_Section_Editor {
 
 		$post_id = $args[0];
 		if($cap == 'edit_page') {
-			if($post_id && !BU_Section_Editor::can_edit($post_id, $user_id)) {
+			$post = get_post($post_id);
+
+			if($post_id && $post->post_status == 'publish' && !BU_Section_Editor::can_edit($post_id, $user_id)) {
 				$caps = array('do_not_allow');
 			}
 		}
@@ -548,24 +608,25 @@ class BU_Section_Editor {
 		}
 
 		if($cap == 'publish_pages') {
-			if(!$post_id || !BU_Section_Editor::can_edit($post_id, $user_id)) {
+			global $post_ID;
+
+			$post_id = $post_ID;
+
+			if($post_id && !BU_Section_Editor::can_edit($post_id, $user_id)) {
 				$caps = array('do_not_allow');
 			}
 		}
 
 		if($cap == 'publish_page_revisions') {
+			global $post_ID;
+
+			$post_id = $post_ID;
+
 			$revision = get_post($post_id);
 
 			if(!$revision || !BU_Section_Editor::can_edit($revision->post_parent, $user_id)) {
 				$caps = array('do_not_allow');
 			}
-		}
-		if($cap == 'edit_page_revision') {
-			$revision = get_post($post_id);
-
-//			if(!$revision || ($revision->post_author != $user_id && !BU_Section_Editor::can_edit($revision->post_parent, $user_id))) {
-//				$caps = array('do_not_allow');
-//			}
 		}
 
 		return $caps;
