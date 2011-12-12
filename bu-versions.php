@@ -7,8 +7,6 @@
  Author: Boston University (IS&T)
 */
 
-
-
 /**
  * need three screens:
  *	1) New Group
@@ -265,7 +263,7 @@ class BU_Version_Workflow {
 		$post = get_post($post_id);
 		echo '<a href="' . get_edit_post_link( $post->post_parent, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>';
 	}
-	
+
 	static function page_posts_columns($columns) {
 
 		$insertion_point = 3;
@@ -383,6 +381,8 @@ class BU_Revision_Controller {
 
 class BU_Revision {
 
+	public $post_type = null;
+
 	function __construct($post) {
 		if(is_int($post)) {
 			$post = get_post($post);
@@ -391,21 +391,28 @@ class BU_Revision {
 		$this->original = get_post($this->new_version->post_parent);
 	}
 
+
+	function get($id) {
+
+	}
+
 	/**
 	 * @todo finish
 	 **/
 	function create() {
 		$new_version['post_type'] = 'page_revision';
-		$new_version['post_parent'] = $post['ID'];
+		$new_version['post_parent'] = $this->original['ID'];
 		$new_version['ID'] = null;
 		$new_version['post_status'] = 'draft';
-		$new_version['post_content'] = $post['post_content'];
-		$new_version['post_name'] = $post['post_name'];
-		$new_version['post_title'] = $post['post_title'];
-		$new_version['post_excerpt'] = $post['post_excerpt'];
+		$new_version['post_content'] = $this->original['post_content'];
+		$new_version['post_name'] = $this->original['post_name'];
+		$new_version['post_title'] = $this->original['post_title'];
+		$new_version['post_excerpt'] = $this->original['post_excerpt'];
 		$id = wp_insert_post($new_version);
 
 		update_post_meta($post['ID'], '_bu_revision', $id);
+
+		return $id;
 
 	}
 
