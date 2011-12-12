@@ -7,14 +7,9 @@
  Author: Boston University (IS&T)
 */
 
-// add action link to the page listing
-// add a column that lists active
-// add column to page revision listing that lists the parent.
+
 
 /**
- * consider removing the ability to create multiple versions. focus one version to add value.
- * add box for controlling which page the page replaces.
- *
  * need three screens:
  *	1) New Group
  *  2) Groups
@@ -37,7 +32,6 @@
  * Groups get attached to pages via postmeta.
  * Two meta_keys _bu_edit_group
  *
- * What is the best approach for checking ACL for all ancestors?
  *
  * New Page Revision has to be dealt with. (perhaps with a css+js hack)
  * or/ can the page listing + revision listing combined into a single view.
@@ -45,8 +39,6 @@
  *
  *
  * Perhaps alternate version should be captured as postmeta, too?
- *
- * Try adding a column for the new version.
  *
  */
 
@@ -416,6 +408,7 @@ class BU_Version_Roles {
 		}
 
 		$role = get_role('lead_editor');
+		$role->remove_cap('edit_published_pages');
 		$role->add_cap('manage_training_manager');
 		$role->add_cap('upload_files');
 		$role->add_cap('edit_posts');
