@@ -59,7 +59,10 @@ class BU_Version_Workflow {
 
 		self::register_post_types();
 
-		add_action('do_meta_boxes', array('BU_Version_Workflow', 'register_meta_boxes'), 10, 3);
+		// forgo the meta boxes for now...
+		//add_action('do_meta_boxes', array('BU_Version_Workflow', 'register_meta_boxes'), 10, 3);
+
+
 		add_action('admin_menu', array('BU_Version_Workflow', 'admin_menu'));
 		add_action('load-admin_page_bu_create_revision', array('BU_Revision_Controller', 'load_create_revision'));
 		add_action('transition_post_status', array('BU_Revision_Controller', 'publish_revision'), 10, 3);
@@ -192,12 +195,18 @@ class BU_Version_Workflow {
 		$GLOBALS['post'] = $original_post;
 	}
 
+	/**
+	 * Redirect page_revision previews to the orginal page, but with a specific
+	 * parameter included that triggers the content to be replaced with the data
+	 * from the new version.
+	 */
 	static function redirect_preview() {
 		if(is_preview() && is_singular('page_revision')) {
 			$request = strtolower(trim($_SERVER['REQUEST_URI']));
 			$request = preg_replace('#\?.*$#', '', $request);
 			$revision_id = (int) get_query_var('p');
-			$url = BU_Revision_Controller::get_preview_URL($revision_id);
+			$revision = new BU_Revision($revision_id);
+			$url = $revision->get_preview_URL();
 			wp_redirect($url, 302);
 			exit();
 		}
@@ -256,6 +265,7 @@ class BU_Version_Workflow {
 		$post = get_post($post_id);
 		echo '<a href="' . get_edit_post_link( $post->post_parent, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>';
 	}
+	
 	static function page_posts_columns($columns) {
 
 		$insertion_point = 3;
@@ -276,9 +286,10 @@ class BU_Version_Workflow {
 		if($column_name != 'pending_edit') return;
 		$revision_id = get_post_meta($post_id, '_bu_revision', true);
 		if(!empty($revision_id)) {
+			$revision = new BU_Revision($revisions_id);
 			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($revision_id, true), esc_attr(__( 'Edit this item')));
 			print(" | ");
-			printf('<a href="%s" title="%s">view</a>', BU_Revision_Controller::get_preview_URL($revision_id), esc_attr(__('Preview this edit')));
+			printf('<a href="%s" title="%s">view</a>', $revision->get_preview_URL($revision_id), esc_attr(__('Preview this edit')));
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
@@ -308,13 +319,6 @@ class BU_Revision_Controller {
 		$url = 'admin.php?page=bu_create_revision';
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
 		return wp_nonce_url($url, 'create_revision');
-	}
-
-	static function get_preview_URL($revision_id) {
-		$revision = get_post($revision_id);
-		$permalink = get_permalink($revision);
-		$url = add_query_arg(array('revision' => $revision->ID, 'preview'=> 'true', 'p' => $revision->post_parent, 'post_type' => 'page'), $permalink);
-		return $url;
 	}
 
 	static function publish_revision($new_status, $old_status, $post) {
@@ -373,12 +377,6 @@ class BU_Revision_Controller {
 		}
 	}
 
-
-
-	static function create_revision_view() {
-		// no-op
-	}
-
 }
 // @see _set_preview() -- WordPress uses the autosave to generate previews. We can use
 // the same approach when overriding the display of a page.
@@ -386,6 +384,9 @@ class BU_Revision_Controller {
 class BU_Revision {
 
 	function __construct($post) {
+		if(is_int($post)) {
+			$post = get_post($post);
+		}
 		$this->new_version = $post;
 		$this->original = get_post($this->new_version->post_parent);
 	}
@@ -421,6 +422,12 @@ class BU_Revision {
 
 	function get_original_edit_url() {
 		return get_edit_post_link($this->original->ID, 'redirect');
+	}
+
+	function get_preview_URL() {
+		$permalink = get_permalink($this->new_version);
+		$url = add_query_arg(array('revision' => $this->new_version->ID, 'preview'=> 'true', 'p' => $this->new_version->post_parent, 'post_type' => 'page'), $permalink);
+		return $url;
 	}
 
 }
