@@ -73,6 +73,7 @@ class BU_Version_Workflow {
 
 		BU_Version_Roles::maybe_create();
 
+		add_action('admin_notices', array('BU_Version_Workflow', 'admin_notices'));
 
 	}
 
@@ -142,8 +143,43 @@ class BU_Version_Workflow {
 		register_post_type('page_revision', $args);
 	}
 
+
+	/**
+	 * Display an admin notice on pages that have an alternate version in draft form.
+	 *
+	 * @global type $current_screen
+	 * @global type $post_ID
+	 */
+	static function admin_notices() {
+		global $current_screen;
+		global $post_ID;
+
+
+		if($current_screen->base == 'post') {
+
+			$post_id = $post_ID;
+			if($post_id) {
+				$post = get_post($post_id);
+				switch($post->post_type) {
+					case 'page':
+						$versions = BU_Revision_Controller::get_versions($post_id);
+						if(is_array($versions) && !empty($versions)) {
+							printf('<div class="notice"><h3>There is an alternate version for this page. <a href="%s">Edit</a></h3></div>', get_edit_post_link($versions[0]->ID));
+						}
+						break;
+					case 'page_revision':
+						$version = new BU_Revision($post);
+						printf('<div class="notice"><h3>This is a pending edit to an <a href="%s">existing page</a>.</h3></div>', $version->get_original_edit_url());
+						break;
+				}
+
+			}
+		}
+	}
+
+
 	static function register_meta_boxes($post_type, $position, $post) {
-		add_meta_box('bu_new_version', 'Other Versions', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
+		add_meta_box('bu_new_version', 'Pending Edits', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
 	}
 
 	static function new_version_meta_box($post) {
@@ -295,6 +331,18 @@ class BU_Revision_Controller {
 
 	}
 
+	static function get_versions($post_id) {
+		$args = array(
+			'post_parent' => (int) $post_id,
+			'post_type' => 'page_revision',
+			'posts_per_page' => -1,
+			'post_status' => 'any'
+		);
+		$query = new WP_Query($args);
+		return $query->get_posts();
+
+
+	}
 
 	// GET handler used to create a revision
 	static function load_create_revision() {
