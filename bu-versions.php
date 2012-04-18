@@ -662,6 +662,15 @@ class BU_Section_Editor {
 			}
 		}
 
+
+		/**
+		 * Unfortunately, WordPress doesn't have a meta_cap for publish_page(), so there are no calls
+		 * for current_user_can('publish_page', $post_id). WordPress also doesn't provide any pre_update hooks that
+		 * would allow us to hook in as part of the update process.
+		 *
+		 * We need to add a trac ticket to address this issue. The registration of the meta_cap also needs to
+		 * be done across all post_types.
+		 */
 		if($cap == 'publish_pages') {
 			global $post_ID;
 

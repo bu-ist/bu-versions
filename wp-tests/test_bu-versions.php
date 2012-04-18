@@ -1,5 +1,7 @@
 <?php
 
+if(!defined('TEST_WP')) return;
+
 class Test_BU_Versions extends WPTestCase {
 
 	function setUp() {
@@ -18,7 +20,6 @@ class Test_BU_Versions extends WPTestCase {
 		$this->assertEquals($version_post->post_parent, $original_post->post_parent);
 		$this->assertEquals($version_post->post_title, $original_post->post_title);
 		$this->assertEquals($version_post->post_content, $original_post->post_content);
-		//$this
 
 	}
 
@@ -41,8 +42,6 @@ class Test_BU_Versions extends WPTestCase {
 		$old_version = get_post($version_post->ID);
 
 		$this->assertFalse($old_version);
-
-
 
 	}
 
