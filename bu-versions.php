@@ -46,9 +46,6 @@
 // $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
 
 
-require_once('classes.groups.php');
-require_once('admin.groups.php');
-
 
 class BU_Version_Workflow {
 
@@ -81,14 +78,11 @@ class BU_Version_Workflow {
 
 	static function admin_menu() {
 
+		// needs to be post type aware
+
 		// need cap for creating revision
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
-		add_pages_page(null, 'Pending Edits', 'edit_pages', 'edit.php?post_type=page_revision');
-		$hook = add_users_page('Edit Groups', 'Edit Groups', 'promote_users', 'manage_groups', array('BU_Groups_Admin', 'manage_groups_screen'));
-		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_manage_groups'), 1);
-
-		$hook = add_users_page('Add New Group', 'Add New Group', 'promote_users', 'add_group', array('BU_Groups_Admin', 'add_group_screen'));
-		add_action('load-' . $hook, array('BU_Groups_Admin', 'load_add_group'), 1);
+		add_pages_page(null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=page_revision');
 
 		add_filter('manage_page_posts_columns', array('BU_Version_Workflow', 'page_posts_columns'));
 		add_action('manage_page_posts_custom_column', array('BU_Version_Workflow', 'page_column'), 10, 2);
@@ -100,24 +94,22 @@ class BU_Version_Workflow {
 
 	static function register_post_types() {
 
-		post_type_supports($post_type, $feature);
-
 		$labels = array(
-			'name' => _x('Page Edits', 'post type general name'),
-			'singular_name' => _x('Page Edit', 'post type singular name'),
+			'name' => _x('Alternate Versions', 'post type general name'),
+			'singular_name' => _x('Alternate Version', 'post type singular name'),
 			'add_new' => _x('Add New', ''),
-			'add_new_item' => __('Add New Edit'),
-			'edit_item' => __('Pending Edit'),
+			'add_new_item' => __('Add New Version'),
+			'edit_item' => __('Edit Alternate Version'),
 			'new_item' => __('New'),
-			'view_item' => __('View Page Edit'),
-			'search_items' => __('Search Page Edits'),
-			'not_found' =>  __('No Page Edits found'),
-			'not_found_in_trash' => __('No Page Edits found in Trash'),
+			'view_item' => __('View Alternate Version'),
+			'search_items' => __('Search Alternate Versions'),
+			'not_found' =>  __('No Alternate Versions found'),
+			'not_found_in_trash' => __('No Alternate Versions found in Trash'),
 			'parent_item_colon' => '',
-			'menu_name' => 'Page Edits'
+			'menu_name' => 'Alternate Versions'
 		);
 
-		$args = array(
+		$default_args = array(
 			'labels' => $labels,
 			'description' => '',
 			'publicly_queryable' => true,
@@ -130,7 +122,7 @@ class BU_Version_Workflow {
 			'has_archive' => false,
 			'query_var' => true,
 			'supports' => array('editor', 'title', 'author', 'revisions' ), // copy support from the post_type
-			'taxonomies' => array(), // leave taxonomies to last
+			'taxonomies' => array(),
 			'show_ui' => true,
 			'show_in_menu' => false,
 			'menu_position' => null,
@@ -141,7 +133,18 @@ class BU_Version_Workflow {
 			'show_in_menu' => false,
 		);
 
-		register_post_type('page_revision', $args);
+
+		$post_types = get_post_types(array('show_ui' => true));
+
+		foreach($post_types as $type) {
+
+			$args = $default_args;
+			//$args['hierarchical'] = $type;
+			register_post_type($type . '_alt_version', $args);
+		}
+
+
+
 	}
 
 
@@ -214,7 +217,7 @@ class BU_Version_Workflow {
 	static function filter_page_status_buckets($views) {
 
 		// need to handle counts
-		$views['pending_edits'] = '<a href="edit.php?post_type=page_revision">Pending Edits</a>';
+		$views['pending_edits'] = '<a href="edit.php?post_type=page_alt_version">Alternate Versions</a>';
 		return $views;
 	}
 
@@ -271,7 +274,7 @@ class BU_Version_Workflow {
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['pending_edit'] = 'Pending Edits';
+				$new_columns['pending_edit'] = 'Alternate Versions';
 			}
 			$new_columns[$key] = $columns[$key];
 			$i++;
@@ -291,7 +294,7 @@ class BU_Version_Workflow {
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
-				printf('<a href="%s">create</a>', BU_Revision_Controller::get_URL($post));
+				printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Revision_Controller::get_URL($post));
 			}
 		}
 	}
@@ -613,7 +616,7 @@ class BU_Section_Editor {
 
 		$user = get_userdata($user_id);
 
-		if($user && in_array('section_editor', $user->roles)) {
+		if(is_array($user) && in_array('section_editor', $user->roles)) {
 			$post = get_post($post_id, OBJECT, null);
 			$groups = get_post_meta($post_id, 'bu_group');
 			$edit_groups_o = BU_Edit_Groups::get_instance();
