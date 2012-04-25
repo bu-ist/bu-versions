@@ -146,7 +146,7 @@ class BU_Version_Admin_UI {
 					if( $orig_post_type === 'post') {
 						$file = 'edit.php';
 					} else {
-						$file = add_query_arg($file, $v_manager->get_orig_post_type());
+						$file = add_query_arg(array('post_type' => $orig_post_type), $file);
 					}
 
 				}
