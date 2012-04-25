@@ -117,7 +117,8 @@ class BU_Version_Admin_UI {
 					$original = get_post_type_object($type->get_orig_post_type());
 					$version = new BU_Version();
 					$version->get($post_id);
-					printf('<div class="notice"><h3>This is a pending edit to an <a href="%s">existing %s</a>.</h3></div>', $version->get_original_edit_url(), lcfirst($original->labels->singular_name));
+					$label = lcfirst($original->labels->singular_name);
+					printf('<div class="notice"><h3>This is a clone of an existing %s and will replace the <a href="%s">original %s</a> when published.</h3></div>', $label, $version->get_original_edit_url(), $label);
 				} else {
 					$manager = $this->v_factory->get_alt_manager($post->post_type);
 					if(isset($manager)) {
@@ -370,7 +371,7 @@ class BU_Version_Manager_Admin {
 		$version_id = get_post_meta($post_id, '_bu_version', true);
 		if(!empty($version_id)) {
 			$version = new BU_Version($version_id);
-			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($version_id, true), esc_attr(__( 'Edit this item')));
+			printf('<a href="%s" title="%s">edit version</a>', get_edit_post_link($version_id, true), esc_attr(__( 'Edit this item')));
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
