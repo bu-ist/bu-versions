@@ -3,32 +3,12 @@
 /*
  Plugin Name: BU Versions
  Description: Make and review edits to published content.
- Version: 0.1
+ Version: 0.2
  Author: Boston University (IS&T)
 */
 
 /**
- * need three screens:
- *	1) New Group
- *  2) Groups
- *  3) Edit Group
  *
- * --- Groups ---
- *
- * 1) Users added / removed / role changed
- * 2) Role removed
- * 3) Groups created, updated, deleted
- * 4) Group needs unique ID
- *
- *
- * Each group is a post in a custom post type..
- *
- * Get groups. (WP_Query)
- *
- * Build page tree with groups attached.
- *
- * Groups get attached to pages via postmeta.
- * Two meta_keys _bu_edit_group
  *
  *
  * New Page Revision has to be dealt with. (perhaps with a css+js hack)
@@ -49,50 +29,159 @@
 
 class BU_Version_Workflow {
 
+	public static $v_factory;
+	public static $controller;
+	public static $admin;
+
 	static function init() {
-		global $bu_edit_groups;
 
-		self::register_post_types();
+		self::$v_factory = new BU_VPost_Factory();
+		self::$v_factory->register_post_types();
 
+
+		self::$controller = new BU_Version_Controller(self::$v_factory);
 		// forgo the meta boxes for now...
 		//add_action('do_meta_boxes', array('BU_Version_Workflow', 'register_meta_boxes'), 10, 3);
 
 
-		add_action('admin_menu', array('BU_Version_Workflow', 'admin_menu'));
-		add_action('load-admin_page_bu_create_revision', array('BU_Revision_Controller', 'load_create_revision'));
-		add_action('transition_post_status', array('BU_Revision_Controller', 'publish_revision'), 10, 3);
-		add_filter('the_preview', array('BU_Version_Workflow', 'show_preview'), 12); // needs to come after the regular preview filter
-		add_filter('template_redirect', array('BU_Version_Workflow', 'redirect_preview'));
-		add_filter('parent_file', array('BU_Version_Workflow', 'parent_file'));
+		add_filter('parent_file', array('BU_Version_Admin', 'parent_file'));
+
+		add_action('admin_init', array('BU_Version_Workflow', 'admin_init'));
+
+		add_action('load-admin_page_bu_create_revision', array('BU_Version_Controller', 'load_create_revision'));
+
+
+		add_action('transition_post_status', array('BU_Version_Controller', 'publish_revision'), 10, 3);
+		add_filter('the_preview', array('BU_Version_Controller', 'preview'), 12); // needs to come after the regular preview filter
+		add_filter('template_redirect', array('BU_Version_Controller', 'redirect_preview'));
 
 		add_rewrite_tag('%revision%', '[^&]+'); // bring the revision id variable to life
 
-		add_filter('map_meta_cap', array('BU_Section_Editor', 'map_meta_cap'), 10, 4);
-
-		BU_Version_Roles::maybe_create();
-
-		add_action('admin_notices', array('BU_Version_Workflow', 'admin_notices'));
+		///add_filter('map_meta_cap', array('BU_Section_Editor', 'map_meta_cap'), 10, 4);
 
 	}
 
 
-	static function admin_menu() {
+	static function admin_init() {
+		self::$admin = new BU_Version_Admin_UI(self::$v_factory);
+		add_action('admin_menu', array(self::$admin, 'admin_menu'));
+		add_action('admin_notices', array(self::$admin, 'admin_notices'));
+	}
 
-		// needs to be post type aware
 
-		// need cap for creating revision
-		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Revision_Controller', 'create_revision_view'));
-		add_pages_page(null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=page_revision');
 
-		add_filter('manage_page_posts_columns', array('BU_Version_Workflow', 'page_posts_columns'));
-		add_action('manage_page_posts_custom_column', array('BU_Version_Workflow', 'page_column'), 10, 2);
-		add_filter('manage_page_revision_posts_columns', array('BU_Version_Workflow', 'page_revision_columns'));
-		add_action('manage_page_revision_posts_custom_column', array('BU_Version_Workflow', 'page_revision_column'), 10, 2);
-		add_filter('views_edit-page', array('BU_Version_Workflow', 'filter_page_status_buckets'));
+}
+
+add_action('init', array('BU_Version_Workflow', 'init'));
+
+class BU_Version_Admin_UI {
+
+	public $v_factory;
+
+	function __construct($v_factory) {
+		$this->$v_factory;
+	}
+
+	function admin_menu() {
+
+		foreach(self::$v_factory as $type) {
+			$orginal_post_type = $type->get_orig_post_type();
+
+			add_submenu_page( 'edit.php?post_type=' . $orginal_post_type, null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type' . $type->post_type);
+
+			add_action('manage_' . $original_post_type . '_posts_columns', array($type->admin, 'orig_posts_columns'));
+			add_action('manage_' . $original_post_type . '_posts_custom_column', array($this->admin, 'orig_post_column'));
+
+			add_filter('manage_' . $type->post_type . '_posts_columns', array($type->admin, 'posts_columns'));
+			add_action('manage_' . $type->post_type . '_posts_custom_column', array($type->admin, 'post_column'), 10, 2);
+
+			add_filter('views_edit-' . $original_post_type, array($type->admin, 'filter_status_buckets'));
+
+		}
+
+		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Version_Controller', 'create_revision_view'));
 
 	}
 
-	static function register_post_types() {
+	/**
+	 * Display an admin notice on pages that have an alternate version in draft form.
+	 *
+	 * @global type $current_screen
+	 * @global type $post_ID
+	 */
+	function admin_notices() {
+		global $current_screen;
+		global $post_ID;
+
+
+		if($current_screen->base == 'post') {
+
+			$post_id = $post_ID;
+			if($post_id) {
+				$post = get_post($post_id);
+
+				if($this->v_factory->is_alt($post->post_type)) {
+					$type = $this->v_factory->get($post->post_type);
+					$original = get_post_type_object($type->get_orig_post_type());
+					$version = new BU_Version($post);
+					printf('<div class="notice"><h3>This is a pending edit to an <a href="%s">existing %s</a>.</h3></div>', $original->singular_name, $version->get_original_edit_url());
+				} else {
+					$versions = BU_Version_Controller::get_versions($post_id);
+					if(is_array($versions) && !empty($versions)) {
+						printf('<div class="notice"><h3>There is an alternate version for this page. <a href="%s">Edit</a></h3></div>', get_edit_post_link($versions[0]->ID));
+					}
+				}
+
+			}
+		}
+	}
+
+	function show_preview($post) {
+		if ( ! is_object($post) )
+			return $post;
+
+		$version_id = (int) get_query_var('version_id');
+
+		$preview = wp_get_post_autosave($version_id);
+		if ( ! is_object($preview) ) {
+			$preview = get_post($version_id);
+			if( !is_object($preview)) return $post;
+		}
+
+		$preview = sanitize_post($preview);
+
+		$post->post_content = $preview->post_content;
+		$post->post_title = $preview->post_title;
+		$post->post_excerpt = $preview->post_excerpt;
+
+		return $post;
+
+	}
+
+	function parent_file($file) {
+		if(strpos($file, 'edit.php') !== false) {
+			$parts = parse_url($file);
+			$params = null;
+			parse_str($parts['query'], $params);
+			if(isset($params['post_type'])) {
+				$v_manager = $this->v_factory->get($params['post_type']);
+				if(!is_null($v_manager)) {
+					$file = add_query_arg($file, $v_manager->get_orig_post_type());
+				}
+			}
+		}
+		return $file;
+	}
+}
+
+class BU_VPost_Factory {
+	protected $v_post_types;
+
+	function __construct() {
+		$this->v_post_types = array();
+	}
+
+	function register_post_types() {
 
 		$labels = array(
 			'name' => _x('Alternate Versions', 'post type general name'),
@@ -138,114 +227,121 @@ class BU_Version_Workflow {
 
 		foreach($post_types as $type) {
 
-			$args = $default_args;
-			//$args['hierarchical'] = $type;
-			register_post_type($type . '_alt_version', $args);
-		}
-
-
-
-	}
-
-
-	/**
-	 * Display an admin notice on pages that have an alternate version in draft form.
-	 *
-	 * @global type $current_screen
-	 * @global type $post_ID
-	 */
-	static function admin_notices() {
-		global $current_screen;
-		global $post_ID;
-
-
-		if($current_screen->base == 'post') {
-
-			$post_id = $post_ID;
-			if($post_id) {
-				$post = get_post($post_id);
-				switch($post->post_type) {
-					case 'page':
-						$versions = BU_Revision_Controller::get_versions($post_id);
-						if(is_array($versions) && !empty($versions)) {
-							printf('<div class="notice"><h3>There is an alternate version for this page. <a href="%s">Edit</a></h3></div>', get_edit_post_link($versions[0]->ID));
-						}
-						break;
-					case 'page_revision':
-						$version = new BU_Revision($post);
-						printf('<div class="notice"><h3>This is a pending edit to an <a href="%s">existing page</a>.</h3></div>', $version->get_original_edit_url());
-						break;
-				}
-
+			// allow plugins/themes to control whether a post type supports alternate versions
+			// consider using post_type supports
+			if(false === apply_filters('bu_alt_versions_for_type', true, $type)) {
+				continue;
 			}
+
+			$args = apply_filters('bu_alt_version_args', $default_args, $type);
+			//$args['hierarchical'] = $type;
+			$v_post_type = $type . '_alt_version';
+			$this->v_post_types[$v_post_type] = new BU_Version_Manager($type, $v_post_type, $args);
 		}
 	}
 
-
-	static function register_meta_boxes($post_type, $position, $post) {
-		add_meta_box('bu_new_version', 'Pending Edits', array('BU_Version_Workflow', 'new_version_meta_box'), 'page', 'side', 'high');
+	function get($post_type) {
+		if(is_array($this->v_post_types)  && array_key_exists($post_type, $this->v_post_types)) {
+			return $this->v_post_types[$post_type];
+		} else {
+			return null;
+		}
 	}
 
-	static function new_version_meta_box($post) {
-		$original_post = $GLOBALS['post']; //need to be able to restore the global
-
-		$url = BU_Revision_Controller::get_URL($post);
-		$versions = new WP_Query(array('post_type' => 'page_revision', 'post_parent' => $post->ID, 'nopaging' => true));
-		include('interface/page-edits.php');
-
-		$GLOBALS['post'] = $original_post;
+	function get_alt_versions() {
+		return array_keys($this->v_post_types);
 	}
+
+	function is_alt($post_type) {
+		return array_key_exists($post_type, $this->v_post_types);
+	}
+
+}
+
+class BU_Version_Manager {
+
 
 	/**
-	 * Redirect page_revision previews to the orginal page, but with a specific
-	 * parameter included that triggers the content to be replaced with the data
-	 * from the new version.
+	 * Post type of the alternate version
+	 * @var type
 	 */
-	static function redirect_preview() {
-		if(is_preview() && is_singular('page_revision')) {
-			$request = strtolower(trim($_SERVER['REQUEST_URI']));
-			$request = preg_replace('#\?.*$#', '', $request);
-			$revision_id = (int) get_query_var('p');
-			$revision = new BU_Revision($revision_id);
-			$url = $revision->get_preview_URL();
-			wp_redirect($url, 302);
-			exit();
+	public $post_type = null;
+
+	/**
+	 * Post type of the originals
+	 *
+	 * @var type
+	 */
+
+	public $orig_post_type = null;
+	public $admin = null;
+
+	function __construct($orig_post_type, $post_type, $args) {
+		$this->post_type = register_post_type($post_type, $args);
+		$this->orig_post_type = get_post_type_object($orig_post_type);
+
+		if(is_admin()) {
+			$this->admin = new BU_Version_Manager_Admin($this->post_type);
 		}
+
+	}
+
+	function get_orig_post_type() {
+		return $this->orig_post_type;
 	}
 
 
-	static function filter_page_status_buckets($views) {
+	function get_versions($orig_post_id) {
+		$args = array(
+			'post_parent' => (int) $orig_post_id,
+			'post_type' => $this->post_type,
+			'posts_per_page' => -1,
+			'post_status' => 'any'
+		);
+
+		$query = new WP_Query($args);
+		$posts = $query->get_posts();
+
+		if(empty($posts)) {
+			return null;
+		}
+
+		$versions = array();
+
+		foreach($posts as $post) {
+			$versions[] = new BU_Version($orig_post_id);
+		}
+
+	}
+
+	function add_caps() {
+		// get_roles
+
+		// foreach roles as role
+
+		// if ! has_cap then add cap
+		// need to have filtering to allow a plugin/theme to control whether caps are added automatically
+	}
+
+
+}
+
+class BU_Version_Manager_Admin {
+
+	public $post_type;
+
+	function __construct($post_type) {
+		$this->post_type = $post_type;
+	}
+
+	function filter_status_buckets($views) {
 
 		// need to handle counts
-		$views['pending_edits'] = '<a href="edit.php?post_type=page_alt_version">Alternate Versions</a>';
+		$views['pending_edits'] = sprintf('<a href="edit.php?post_type=%s">Alternate Versions</a>', $this->post_type);
 		return $views;
 	}
 
-
-
-	static function show_preview($post) {
-		if ( ! is_object($post) )
-			return $post;
-
-		$revision_id = (int) get_query_var('revision');
-
-		$preview = wp_get_post_autosave($revision_id);
-		if ( ! is_object($preview) ) {
-			$preview = get_post($revision_id);
-			if( !is_object($preview)) return $post;
-		}
-
-		$preview = sanitize_post($preview);
-
-		$post->post_content = $preview->post_content;
-		$post->post_title = $preview->post_title;
-		$post->post_excerpt = $preview->post_excerpt;
-
-		return $post;
-
-	}
-
-	static function page_revision_columns($columns) {
+	function alt_version_columns($columns) {
 
 		$insertion_point = 3;
 		$i = 1;
@@ -261,20 +357,20 @@ class BU_Version_Workflow {
 		return $new_columns;
 	}
 
-	static function page_revision_column($column_name, $post_id) {
+	function alt_version_column($column_name, $post_id) {
 		if($column_name != 'original_edit') return;
 		$post = get_post($post_id);
 		echo '<a href="' . get_edit_post_link( $post->post_parent, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>';
 	}
 
-	static function page_posts_columns($columns) {
+	function posts_columns($columns) {
 
 		$insertion_point = 3;
 		$i = 1;
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['pending_edit'] = 'Alternate Versions';
+				$new_columns['alternate_versions'] = 'Alternate Versions';
 			}
 			$new_columns[$key] = $columns[$key];
 			$i++;
@@ -283,82 +379,86 @@ class BU_Version_Workflow {
 		return $new_columns;
 	}
 
-	static function page_column($column_name, $post_id) {
+	function post_column($column_name, $post_id) {
 		if($column_name != 'pending_edit') return;
 		$revision_id = get_post_meta($post_id, '_bu_revision', true);
 		if(!empty($revision_id)) {
-			$revision = new BU_Revision($revisions_id);
+			$revision = new BU_Version($revisions_id);
 			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($revision_id, true), esc_attr(__( 'Edit this item')));
 			print(" | ");
 			printf('<a href="%s" title="%s">view</a>', $revision->get_preview_URL($revision_id), esc_attr(__('Preview this edit')));
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
-				printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Revision_Controller::get_URL($post));
+				printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Version_Controller::get_URL($post));
 			}
 		}
 	}
 
-
-	static function parent_file($file) {
-		if($file == 'edit.php?post_type=page_revision') {
-			return 'edit.php?post_type=page';
-		}
-		return $file;
-	}
 }
-
-add_action('init', array('BU_Version_Workflow', 'init'));
-
 
 // add class that can be used for each post_type
 
+class BU_Version_Controller {
+	public $v_factory;
 
-class BU_Revision_Controller {
+	function __construct($v_factory) {
+		$this->v_factory = $v_factory;
+	}
 
-	static function get_URL($post) {
+	function get_URL($post) {
 		$url = 'admin.php?page=bu_create_revision';
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
 		return wp_nonce_url($url, 'create_revision');
 	}
 
-	static function publish_revision($new_status, $old_status, $post) {
-
-		if($post->post_type != 'page_revision') return;
+	function publish_revision($new_status, $old_status, $post) {
 
 		if($new_status === 'publish' && $old_status !== 'publish') {
-			$revision = new BU_Revision($post);
-			$revision->publish();
+			$version = new BU_Version();
+			$version->get($post->ID);
+			$version->publish();
 			// Is this the appropriate spot for a redirect?
-			wp_redirect($revision->get_original_edit_url());
+			wp_redirect($version->get_original_edit_url());
 			exit;
 		}
-
 	}
-
-	static function get_versions($post_id) {
-		$args = array(
-			'post_parent' => (int) $post_id,
-			'post_type' => 'page_revision',
-			'posts_per_page' => -1,
-			'post_status' => 'any'
-		);
-		$query = new WP_Query($args);
-		return $query->get_posts();
-
-
+	/**
+	 * Redirect page_revision previews to the orginal page, but with a specific
+	 * parameter included that triggers the content to be replaced with the data
+	 * from the new version.
+	 */
+	static function redirect_preview() {
+		$alt_versions = $this->v_factory->get_alt_types();
+		if(is_preview() && is_singular($alt_versions)) {
+			$request = strtolower(trim($_SERVER['REQUEST_URI']));
+			$request = preg_replace('#\?.*$#', '', $request);
+			$version_id = (int) get_query_var('p');
+			$version = new BU_version();
+			$version->get($version_id);
+			$url = $version->get_preview_URL();
+			wp_redirect($url, 302);
+			exit();
+		}
 	}
 
 	// GET handler used to create a revision
-	static function load_create_revision() {
-		if(wp_verify_nonce($_GET['_wpnonce'], 'create_revision')) {
+	function load_create_revision() {
+		if(wp_verify_nonce($_GET['_wpnonce'], 'create_version')) {
 			$post_id = (int) $_GET['post'];
 
 			$post = (array) get_post($post_id);
 
+
 			// need to check against all post types that have published versions enabled.
 			if($post['post_type'] != 'page') return;
 
+
+			// need to figure out how to fail best.
+			//if(!current_user_can('')) return;
+
+
+			$version = new BU_Version();
 
 			$new_version['post_type'] = 'page_revision';
 			$new_version['post_parent'] = $post['ID'];
@@ -382,28 +482,25 @@ class BU_Revision_Controller {
 // @see _set_preview() -- WordPress uses the autosave to generate previews. We can use
 // the same approach when overriding the display of a page.
 
-class BU_Revision {
 
-	public $post_type = null;
+// should be composite of the original and its versions
+class BU_Version {
 
-	function __construct($post) {
-		if(is_int($post)) {
-			$post = get_post($post);
-		}
-		$this->new_version = $post;
-		$this->original = get_post($this->new_version->post_parent);
+	public $original;
+	public $post;
+
+	function __construct() {
 	}
 
 
-	function get($id) {
-
+	function get(version_$id) {
+		$this->post = get_post($id);
+		$this->original = get_post($this->post->post_parent);
 	}
 
-	/**
-	 * @todo finish
-	 **/
-	function create() {
-		$new_version['post_type'] = 'page_revision';
+	function create($post, $alt_post_type) {
+		$this->original = $post;
+		$new_version['post_type'] = $alt_post_type;
 		$new_version['post_parent'] = $this->original['ID'];
 		$new_version['ID'] = null;
 		$new_version['post_status'] = 'draft';
@@ -413,21 +510,26 @@ class BU_Revision {
 		$new_version['post_excerpt'] = $this->original['post_excerpt'];
 		$id = wp_insert_post($new_version);
 
-		update_post_meta($post['ID'], '_bu_revision', $id);
+		update_post_meta($post['ID'], '_bu_version', $id);
 
 		return $id;
 
 	}
 
 	function publish() {
+		if(!isset($this->original) || !isset($this->post)) return false;
+
 		$post = array();
 		$post['ID'] = $this->original->ID;
-		$post['post_title'] = $this->new_version->post_title;
-		$post['post_content'] = $this->new_version->post_content;
-		$post['post_excerpt'] = $this->new_version->post_excerpt;
+		$post['post_title'] = $this->post->post_title;
+		$post['post_content'] = $this->post->post_content;
+		$post['post_excerpt'] = $this->post->post_excerpt;
 		wp_update_post($post);
-		wp_delete_post($this->new_version->ID);
-		delete_post_meta($this->original->ID, '_bu_revision');
+		wp_delete_post($this->post->ID);
+		delete_post_meta($this->original->ID, '_bu_version');
+
+		return true;
+
 	}
 
 	function get_original_edit_url() {
@@ -435,268 +537,11 @@ class BU_Revision {
 	}
 
 	function get_preview_URL() {
-		$permalink = get_permalink($this->new_version);
-		$url = add_query_arg(array('revision' => $this->new_version->ID, 'preview'=> 'true', 'p' => $this->new_version->post_parent, 'post_type' => 'page'), $permalink);
+		if(!isset($this->original) || !isset($this->post)) return null;
+
+		$permalink = get_permalink($this->post);
+		$url = add_query_arg(array('version_id' => $this->post->ID, 'preview'=> 'true', 'p' => $this->post->post_parent, 'post_type' => $this->original->post_type), $permalink);
 		return $url;
-	}
-
-}
-
-class BU_Version_Roles {
-
-	// need to figure out the *best* way to create roles
-	static public function maybe_create() {
-
-		$role = get_role('administrator');
-
-		if(empty($role)) {
-			add_role('administrator', 'Administrator');
-			include( ABSPATH . '/wp-admin/includes/schema.php');// hack to add all roles if they were deleted.
-			populate_roles();
-		}
-
-		$role = get_role('administrator');
-
-		$role->add_cap('read_page_revisions');
-		$role->add_cap('edit_page_revisions');
-		$role->add_cap('edit_others_page_revisions');
-		$role->add_cap('edit_published_page_revisions');
-		$role->add_cap('publish_page_revisions');
-		$role->add_cap('delete_page_revisions');
-		$role->add_cap('delete_others_page_revisions');
-		$role->add_cap('delete_published_page_revisions');
-
-		$role = get_role( 'lead_editor' );
-
-		if(empty($role)) {
-			add_role('lead_editor', 'Lead Editor');
-		}
-
-		$role = get_role('lead_editor');
-		$role->remove_cap('edit_published_pages');
-		$role->add_cap('manage_training_manager');
-		$role->add_cap('upload_files');
-		$role->add_cap('edit_posts');
-		$role->add_cap('read');
-		$role->add_cap('delete_posts');
-
-		$role->add_cap('moderate_comments');
-		$role->add_cap('manage_categories');
-		$role->add_cap('manage_links');
-		$role->add_cap('upload_files');
-		$role->add_cap('import');
-		$role->add_cap('unfiltered_html');
-		$role->add_cap('edit_posts');
-		$role->add_cap('edit_others_posts');
-		$role->add_cap('edit_published_posts');
-		$role->add_cap('publish_posts');
-		$role->add_cap('edit_pages');
-		$role->add_cap('read');
-		$role->add_cap('level_10');
-		$role->add_cap('level_9');
-		$role->add_cap('level_8');
-		$role->add_cap('level_7');
-		$role->add_cap('level_6');
-		$role->add_cap('level_5');
-		$role->add_cap('level_4');
-		$role->add_cap('level_3');
-		$role->add_cap('level_2');
-		$role->add_cap('level_1');
-		$role->add_cap('level_0');
-
-		$role->add_cap('edit_others_pages');
-		$role->add_cap('edit_published_pages');
-		$role->add_cap('publish_pages');
-		$role->add_cap('delete_pages');
-		$role->add_cap('delete_others_pages');
-		$role->add_cap('delete_published_pages');
-		$role->add_cap('delete_posts');
-		$role->add_cap('delete_others_posts');
-		$role->add_cap('delete_published_posts');
-		$role->add_cap('delete_private_posts');
-		$role->add_cap('edit_private_posts');
-		$role->add_cap('read_private_posts');
-		$role->add_cap('delete_private_pages');
-		$role->add_cap('edit_private_pages');
-		$role->add_cap('read_private_pages');
-
-		$role->add_cap('read_page_revisions');
-		$role->add_cap('edit_page_revisions');
-		$role->add_cap('edit_others_page_revisions');
-		$role->add_cap('edit_published_page_revisions');
-		$role->add_cap('publish_page_revisions');
-		$role->add_cap('delete_page_revisions');
-		$role->add_cap('delete_others_page_revisions');
-		$role->add_cap('delete_published_page_revisions');
-
-
-		$role->add_cap('read_private_posts');
-		$role->add_cap('read_private_pages');
-		$role->add_cap('unfiltered_html');
-
-
-		/** Temporary **/
-		$role = get_role('section_editor');
-		if(empty($role)) {
-			add_role('section_editor', 'Section Editor');
-		}
-
-		$role = get_role('section_editor');
-		$role->add_cap('manage_training_manager');
-		$role->add_cap('upload_files');
-
-		$role->add_cap('read');
-		$role->add_cap('edit_pages');
-		$role->add_cap('edit_others_pages');
-
-		// the following roles are overriden by the section editor functionality
-		$role->add_cap('edit_published_pages');
-		$role->add_cap('publish_pages');
-
-		$role->add_cap('moderate_comments');
-		$role->add_cap('manage_categories');
-		$role->add_cap('manage_links');
-		$role->add_cap('upload_files');
-		$role->add_cap('edit_posts');
-		$role->add_cap('read');
-		$role->add_cap('level_7');
-		$role->add_cap('level_6');
-		$role->add_cap('level_5');
-		$role->add_cap('level_4');
-		$role->add_cap('level_3');
-		$role->add_cap('level_2');
-		$role->add_cap('level_1');
-		$role->add_cap('level_0');
-		$role->add_cap('edit_private_posts');
-		$role->add_cap('read_private_posts');
-		$role->add_cap('edit_private_pages');
-		$role->add_cap('read_private_pages');
-
-		$role->add_cap('read_page_revisions');
-		$role->add_cap('edit_page_revisions');
-		$role->add_cap('edit_others_page_revisions');
-		$role->add_cap('edit_published_page_revisions');
-		$role->add_cap('publish_page_revisions');
-		$role->add_cap('delete_page_revisions');
-		$role->add_cap('delete_others_page_revisions');
-		$role->add_cap('delete_published_page_revisions');
-
-		$role->add_cap('unfiltered_html');
-
-				/** Temporary **/
-		$role = get_role('contributor');
-		if(empty($role)) {
-			add_role('contributor', 'Contributor');
-		}
-
-		$role = get_role('contributor');
-		$role->add_cap('manage_training_manager');
-		$role->add_cap('upload_files');
-
-		$role->add_cap('read');
-		$role->add_cap('edit_pages');
-
-		$role->add_cap('read_page_revisions');
-		$role->add_cap('edit_page_revisions');
-		$role->add_cap('edit_others_page_revisions');
-		$role->add_cap('edit_published_page_revisions');
-		$role->add_cap('delete_page_revisions');
-
-		$role->add_cap('unfiltered_html');
-	}
-
-}
-
-class BU_Section_Editor {
-
-
-	static function can_edit($post_id, $user_id)  {
-
-		if($user_id == 0) return false;
-
-		$user = get_userdata($user_id);
-
-		if(is_array($user) && in_array('section_editor', $user->roles)) {
-			$post = get_post($post_id, OBJECT, null);
-			$groups = get_post_meta($post_id, 'bu_group');
-			$edit_groups_o = BU_Edit_Groups::get_instance();
-			if($edit_groups_o->has_user($groups, $user_id)) {
-				return true;
-			} else {
-				$ancestors = get_post_ancestors($post);
-				// iterate through ancestors; needs to be optimized
-				foreach(array_reverse($ancestors) as $ancestor_id) {
-					$groups = get_post_meta($ancestor_id, 'bu_group');
-					if($edit_groups_o->has_user($groups, $user_id)) {
-						return true;
-					}
-				}
-			}
-
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Filter that modifies the caps based on the current state.
-	 *
-	 * @param type $caps
-	 * @param type $cap
-	 * @param type $user_id
-	 * @param type $args
-	 * @return string
-	 */
-	static function map_meta_cap($caps, $cap, $user_id, $args) {
-
-		$post_id = $args[0];
-		if($cap == 'edit_page') {
-			$post = get_post($post_id);
-
-			if($post_id && $post->post_status == 'publish' && !BU_Section_Editor::can_edit($post_id, $user_id)) {
-				$caps = array('do_not_allow');
-			}
-		}
-
-		if($cap == 'delete_page') {
-			if($post_id && !BU_Section_Editor::can_edit($post_id, $user_id)) {
-				$caps = array('do_not_allow');
-			}
-		}
-
-
-		/**
-		 * Unfortunately, WordPress doesn't have a meta_cap for publish_page(), so there are no calls
-		 * for current_user_can('publish_page', $post_id). WordPress also doesn't provide any pre_update hooks that
-		 * would allow us to hook in as part of the update process.
-		 *
-		 * We need to add a trac ticket to address this issue. The registration of the meta_cap also needs to
-		 * be done across all post_types.
-		 */
-		if($cap == 'publish_pages') {
-			global $post_ID;
-
-			$post_id = $post_ID;
-
-			if($post_id && !BU_Section_Editor::can_edit($post_id, $user_id)) {
-				$caps = array('do_not_allow');
-			}
-		}
-
-		if($cap == 'publish_page_revisions') {
-			global $post_ID;
-
-			$post_id = $post_ID;
-
-			$revision = get_post($post_id);
-
-			if(!$revision || !BU_Section_Editor::can_edit($revision->post_parent, $user_id)) {
-				$caps = array('do_not_allow');
-			}
-		}
-
-		return $caps;
 	}
 }
 
