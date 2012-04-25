@@ -84,9 +84,8 @@ class BU_Version_Admin_UI {
 			} else {
 				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
 			}
-
-			add_filter('manage_' . $type . '_posts_columns', array($manager->admin, 'alt_version_columns'));
-			add_action('manage_' . $type . '_posts_custom_column', array($manager->admin, 'alt_version_column'), 10, 2);
+			add_action('manage_' . $original_post_type . '_posts_columns', array($manager->admin, 'orig_columns'));
+			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
 
 			add_filter('views_edit-' . $original_post_type, array($manager->admin, 'filter_status_buckets'));
 
@@ -343,15 +342,15 @@ class BU_Version_Manager_Admin {
 		return $views;
 	}
 
-	function alt_version_columns($columns) {
 
+	function orig_columns($columns) {
 		$insertion_point = 3;
 		$i = 1;
 		$new_columns = array();
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['original_edit'] = 'Original';
+				$new_columns['alternate_versions'] = 'Alternate Versions';
 			}
 			$new_columns[$key] = $columns[$key];
 			$i++;
@@ -360,10 +359,18 @@ class BU_Version_Manager_Admin {
 		return $new_columns;
 	}
 
-	function alt_version_column($column_name, $post_id) {
-		if($column_name != 'original_edit') return;
-		$post = get_post($post_id);
-		echo '<a href="' . get_edit_post_link( $post->post_parent, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>';
+	function orig_column($column_name, $post_id) {
+		if($column_name != 'alternate_versions') return;
+		$version_id = get_post_meta($post_id, '_bu_version', true);
+		if(!empty($version_id)) {
+			$version = new BU_Version($version_id);
+			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($version_id, true), esc_attr(__( 'Edit this item')));
+		} else {
+			$post = get_post($post_id);
+			if($post->post_status == 'publish') {
+				printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Version_Controller::get_URL($post));
+			}
+		}
 	}
 
 }
