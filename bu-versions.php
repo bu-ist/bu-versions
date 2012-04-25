@@ -44,7 +44,7 @@ class BU_Version_Workflow {
 		//add_action('do_meta_boxes', array('BU_Version_Workflow', 'register_meta_boxes'), 10, 3);
 
 
-		add_action('transition_post_status', array('BU_Version_Controller', 'publish_version'), 10, 3);
+		add_action('transition_post_status', array(self::$controller, 'publish_version'), 10, 3);
 		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
 		add_filter('template_redirect', array(self::$controller, 'redirect_preview'));
 
@@ -417,7 +417,7 @@ class BU_Version_Controller {
 
 	function publish_version($new_status, $old_status, $post) {
 
-		if($new_status === 'publish' && $old_status !== 'publish') {
+		if($new_status === 'publish' && $old_status !== 'publish' && $this->v_factory->is_alt($post->post_type)) {
 			$version = new BU_Version();
 			$version->get($post->ID);
 			$version->publish();
@@ -478,7 +478,7 @@ class BU_Version_Controller {
 
 			$version = $v_manager->create($post_id);
 
-			$redirect_url = add_query_arg(array('post' => $version->post->ID, 'post_type' => $v_manager->post_type, 'action' => 'edit'), 'post.php');
+			$redirect_url = add_query_arg(array('post' => $version->get_id(), 'action' => 'edit'), 'post.php');
 			wp_redirect($redirect_url);
 			exit();
 		}
@@ -519,7 +519,7 @@ class BU_Version {
 		$new_version['post_title'] = $this->original->post_title;
 		$new_version['post_excerpt'] = $this->original->post_excerpt;
 		$id = wp_insert_post($new_version);
-
+		$this->post = get_post($id);
 		update_post_meta($post->ID, '_bu_version', $id);
 
 		return $id;
@@ -540,6 +540,10 @@ class BU_Version {
 
 		return true;
 
+	}
+
+	function get_id() {
+		return $this->post->ID;
 	}
 
 	function get_original_edit_url() {
