@@ -44,62 +44,57 @@ class BU_Version_Workflow {
 		//add_action('do_meta_boxes', array('BU_Version_Workflow', 'register_meta_boxes'), 10, 3);
 
 
-		add_filter('parent_file', array('BU_Version_Admin', 'parent_file'));
+		add_action('transition_post_status', array('BU_Version_Controller', 'publish_version'), 10, 3);
+		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
+		add_filter('template_redirect', array(self::$controller, 'redirect_preview'));
 
-		add_action('admin_init', array('BU_Version_Workflow', 'admin_init'));
+		add_rewrite_tag('%version_id%', '[^&]+'); // bring the revision id variable to life
 
-		add_action('load-admin_page_bu_create_revision', array('BU_Version_Controller', 'load_create_revision'));
+		if(is_admin()) {
+			self::$admin = new BU_Version_Admin_UI(self::$v_factory);
+			add_filter('parent_file', array(self::$admin, 'parent_file'));
+			add_action('admin_menu', array(self::$admin, 'admin_menu'));
+			add_action('admin_notices', array(self::$admin, 'admin_notices'));
 
+			add_action('load-admin_page_bu_create_version', array(self::$controller, 'load_create_version'));
 
-		add_action('transition_post_status', array('BU_Version_Controller', 'publish_revision'), 10, 3);
-		add_filter('the_preview', array('BU_Version_Controller', 'preview'), 12); // needs to come after the regular preview filter
-		add_filter('template_redirect', array('BU_Version_Controller', 'redirect_preview'));
-
-		add_rewrite_tag('%revision%', '[^&]+'); // bring the revision id variable to life
-
-		///add_filter('map_meta_cap', array('BU_Section_Editor', 'map_meta_cap'), 10, 4);
+		}
 
 	}
-
-
-	static function admin_init() {
-		self::$admin = new BU_Version_Admin_UI(self::$v_factory);
-		add_action('admin_menu', array(self::$admin, 'admin_menu'));
-		add_action('admin_notices', array(self::$admin, 'admin_notices'));
-	}
-
-
 
 }
 
 add_action('init', array('BU_Version_Workflow', 'init'));
+
 
 class BU_Version_Admin_UI {
 
 	public $v_factory;
 
 	function __construct($v_factory) {
-		$this->$v_factory;
+		$this->v_factory = $v_factory;
 	}
 
 	function admin_menu() {
+		$v_type_managers = $this->v_factory->managers();
+		foreach($v_type_managers as $type => $manager) {
+			$original_post_type = $manager->get_orig_post_type();
+			if($original_post_type === 'post') {
+				add_submenu_page( 'edit.php', null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
+			} else {
+				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
+			}
+			add_action('manage_' . $original_post_type . '_posts_columns', array($manager->admin, 'orig_columns'));
+			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
 
-		foreach(self::$v_factory as $type) {
-			$orginal_post_type = $type->get_orig_post_type();
+			add_filter('manage_' . $type . '_posts_columns', array($manager->admin, 'alt_version_columns'));
+			add_action('manage_' . $type . '_posts_custom_column', array($manager->admin, 'alt_version_column'), 10, 2);
 
-			add_submenu_page( 'edit.php?post_type=' . $orginal_post_type, null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type' . $type->post_type);
-
-			add_action('manage_' . $original_post_type . '_posts_columns', array($type->admin, 'orig_posts_columns'));
-			add_action('manage_' . $original_post_type . '_posts_custom_column', array($this->admin, 'orig_post_column'));
-
-			add_filter('manage_' . $type->post_type . '_posts_columns', array($type->admin, 'posts_columns'));
-			add_action('manage_' . $type->post_type . '_posts_custom_column', array($type->admin, 'post_column'), 10, 2);
-
-			add_filter('views_edit-' . $original_post_type, array($type->admin, 'filter_status_buckets'));
+			add_filter('views_edit-' . $original_post_type, array($manager->admin, 'filter_status_buckets'));
 
 		}
 
-		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_revision', array('BU_Version_Controller', 'create_revision_view'));
+		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
 
 	}
 
@@ -123,12 +118,16 @@ class BU_Version_Admin_UI {
 				if($this->v_factory->is_alt($post->post_type)) {
 					$type = $this->v_factory->get($post->post_type);
 					$original = get_post_type_object($type->get_orig_post_type());
-					$version = new BU_Version($post);
-					printf('<div class="notice"><h3>This is a pending edit to an <a href="%s">existing %s</a>.</h3></div>', $original->singular_name, $version->get_original_edit_url());
+					$version = new BU_Version();
+					$version->get($post_id);
+					printf('<div class="notice"><h3>This is a pending edit to an <a href="%s">existing %s</a>.</h3></div>', $version->get_original_edit_url(), lcfirst($original->labels->singular_name));
 				} else {
-					$versions = BU_Version_Controller::get_versions($post_id);
-					if(is_array($versions) && !empty($versions)) {
-						printf('<div class="notice"><h3>There is an alternate version for this page. <a href="%s">Edit</a></h3></div>', get_edit_post_link($versions[0]->ID));
+					$manager = $this->v_factory->get_alt_manager($post->post_type);
+					if(isset($manager)) {
+						$versions = $manager->get_versions($post_id);
+						if(is_array($versions) && !empty($versions)) {
+							printf('<div class="notice"><h3>There is an alternate version for this page. <a href="%s">Edit</a></h3></div>', $versions[0]->get_edit_url());
+						}
 					}
 				}
 
@@ -136,27 +135,7 @@ class BU_Version_Admin_UI {
 		}
 	}
 
-	function show_preview($post) {
-		if ( ! is_object($post) )
-			return $post;
 
-		$version_id = (int) get_query_var('version_id');
-
-		$preview = wp_get_post_autosave($version_id);
-		if ( ! is_object($preview) ) {
-			$preview = get_post($version_id);
-			if( !is_object($preview)) return $post;
-		}
-
-		$preview = sanitize_post($preview);
-
-		$post->post_content = $preview->post_content;
-		$post->post_title = $preview->post_title;
-		$post->post_excerpt = $preview->post_excerpt;
-
-		return $post;
-
-	}
 
 	function parent_file($file) {
 		if(strpos($file, 'edit.php') !== false) {
@@ -203,7 +182,7 @@ class BU_VPost_Factory {
 			'description' => '',
 			'publicly_queryable' => true,
 			'exclude_from_search' => false,
-			'capability_type' => array('page_revision', 'page_revisions'),
+			'capability_type' => array('edit_pages'),
 			//'capabilities' => array(), // need to figure out the capabilities piece
 			'map_meta_cap' => true,
 			'hierarchical' => false,
@@ -240,6 +219,10 @@ class BU_VPost_Factory {
 		}
 	}
 
+	function managers() {
+		return $this->v_post_types;
+	}
+
 	function get($post_type) {
 		if(is_array($this->v_post_types)  && array_key_exists($post_type, $this->v_post_types)) {
 			return $this->v_post_types[$post_type];
@@ -248,8 +231,17 @@ class BU_VPost_Factory {
 		}
 	}
 
-	function get_alt_versions() {
+	function get_alt_types() {
 		return array_keys($this->v_post_types);
+	}
+
+	function get_alt_manager($post_type) {
+		foreach($this->v_post_types as $manager) {
+			if($manager->orig_post_type === $post_type) {
+				return $manager;
+			}
+
+		}
 	}
 
 	function is_alt($post_type) {
@@ -277,13 +269,21 @@ class BU_Version_Manager {
 	public $admin = null;
 
 	function __construct($orig_post_type, $post_type, $args) {
-		$this->post_type = register_post_type($post_type, $args);
-		$this->orig_post_type = get_post_type_object($orig_post_type);
+		register_post_type($post_type, $args);
+		$this->post_type = $post_type;
+		$this->orig_post_type = $orig_post_type;
 
 		if(is_admin()) {
 			$this->admin = new BU_Version_Manager_Admin($this->post_type);
 		}
 
+	}
+
+	function create($post_id) {
+		$post = get_post($post_id);
+		$version = new BU_Version();
+		$version->create($post, $this->post_type);
+		return $version;
 	}
 
 	function get_orig_post_type() {
@@ -309,8 +309,12 @@ class BU_Version_Manager {
 		$versions = array();
 
 		foreach($posts as $post) {
-			$versions[] = new BU_Version($orig_post_id);
+			$version = new BU_Version();
+			$version->get($post->ID);
+			$versions[] = $version;
+
 		}
+		return $versions;
 
 	}
 
@@ -345,6 +349,7 @@ class BU_Version_Manager_Admin {
 
 		$insertion_point = 3;
 		$i = 1;
+		$new_columns = array();
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
@@ -363,10 +368,10 @@ class BU_Version_Manager_Admin {
 		echo '<a href="' . get_edit_post_link( $post->post_parent, true ) . '" title="' . esc_attr( __( 'Edit this item' ) ) . '">' . __( 'edit' ) . '</a>';
 	}
 
-	function posts_columns($columns) {
-
+	function orig_columns($columns) {
 		$insertion_point = 3;
 		$i = 1;
+		$new_columns = array();
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
@@ -379,14 +384,12 @@ class BU_Version_Manager_Admin {
 		return $new_columns;
 	}
 
-	function post_column($column_name, $post_id) {
-		if($column_name != 'pending_edit') return;
-		$revision_id = get_post_meta($post_id, '_bu_revision', true);
-		if(!empty($revision_id)) {
-			$revision = new BU_Version($revisions_id);
-			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($revision_id, true), esc_attr(__( 'Edit this item')));
-			print(" | ");
-			printf('<a href="%s" title="%s">view</a>', $revision->get_preview_URL($revision_id), esc_attr(__('Preview this edit')));
+	function orig_column($column_name, $post_id) {
+		if($column_name != 'alternate_versions') return;
+		$version_id = get_post_meta($post_id, '_bu_version', true);
+		if(!empty($version_id)) {
+			$version = new BU_Version($version_id);
+			printf('<a href="%s" title="%s">edit</a>', get_edit_post_link($version_id, true), esc_attr(__( 'Edit this item')));
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
@@ -407,12 +410,12 @@ class BU_Version_Controller {
 	}
 
 	function get_URL($post) {
-		$url = 'admin.php?page=bu_create_revision';
+		$url = 'admin.php?page=bu_create_version';
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
-		return wp_nonce_url($url, 'create_revision');
+		return wp_nonce_url($url, 'create_version');
 	}
 
-	function publish_revision($new_status, $old_status, $post) {
+	function publish_version($new_status, $old_status, $post) {
 
 		if($new_status === 'publish' && $old_status !== 'publish') {
 			$version = new BU_Version();
@@ -424,11 +427,11 @@ class BU_Version_Controller {
 		}
 	}
 	/**
-	 * Redirect page_revision previews to the orginal page, but with a specific
+	 * Redirect page_version previews to the orginal page, but with a specific
 	 * parameter included that triggers the content to be replaced with the data
 	 * from the new version.
 	 */
-	static function redirect_preview() {
+	function redirect_preview() {
 		$alt_versions = $this->v_factory->get_alt_types();
 		if(is_preview() && is_singular($alt_versions)) {
 			$request = strtolower(trim($_SERVER['REQUEST_URI']));
@@ -442,40 +445,47 @@ class BU_Version_Controller {
 		}
 	}
 
-	// GET handler used to create a revision
-	function load_create_revision() {
+
+	function preview($post) {
+		if ( ! is_object($post) )
+			return $post;
+
+		$version_id = (int) get_query_var('version_id');
+
+		$preview = wp_get_post_autosave($version_id);
+		if ( ! is_object($preview) ) {
+			$preview = get_post($version_id);
+			if( !is_object($preview)) return $post;
+		}
+
+		$preview = sanitize_post($preview);
+
+		$post->post_content = $preview->post_content;
+		$post->post_title = $preview->post_title;
+		$post->post_excerpt = $preview->post_excerpt;
+
+		return $post;
+
+	}
+	// GET handler used to create a version
+	function load_create_version() {
 		if(wp_verify_nonce($_GET['_wpnonce'], 'create_version')) {
 			$post_id = (int) $_GET['post'];
 
-			$post = (array) get_post($post_id);
+			$post = get_post($post_id);
 
+			$v_manager = $this->v_factory->get_alt_manager($post->post_type);
 
-			// need to check against all post types that have published versions enabled.
-			if($post['post_type'] != 'page') return;
+			$version = $v_manager->create($post_id);
 
-
-			// need to figure out how to fail best.
-			//if(!current_user_can('')) return;
-
-
-			$version = new BU_Version();
-
-			$new_version['post_type'] = 'page_revision';
-			$new_version['post_parent'] = $post['ID'];
-			$new_version['ID'] = null;
-			$new_version['post_status'] = 'draft';
-			$new_version['post_content'] = $post['post_content'];
-			$new_version['post_name'] = $post['post_name'];
-			$new_version['post_title'] = $post['post_title'];
-			$new_version['post_excerpt'] = $post['post_excerpt'];
-			$id = wp_insert_post($new_version);
-
-			update_post_meta($post['ID'], '_bu_revision', $id);
-
-			$redirect_url = add_query_arg(array('post' => $id, 'post_type' => 'page_revision', 'action' => 'edit'), 'post.php');
+			$redirect_url = add_query_arg(array('post' => $version->post->ID, 'post_type' => $v_manager->post_type, 'action' => 'edit'), 'post.php');
 			wp_redirect($redirect_url);
 			exit();
 		}
+	}
+
+	static function create_version_view() {
+		   // no-op
 	}
 
 }
@@ -493,24 +503,24 @@ class BU_Version {
 	}
 
 
-	function get(version_$id) {
-		$this->post = get_post($id);
+	function get($version_id) {
+		$this->post = get_post($version_id);
 		$this->original = get_post($this->post->post_parent);
 	}
 
 	function create($post, $alt_post_type) {
 		$this->original = $post;
 		$new_version['post_type'] = $alt_post_type;
-		$new_version['post_parent'] = $this->original['ID'];
+		$new_version['post_parent'] = $this->original->ID;
 		$new_version['ID'] = null;
 		$new_version['post_status'] = 'draft';
-		$new_version['post_content'] = $this->original['post_content'];
-		$new_version['post_name'] = $this->original['post_name'];
-		$new_version['post_title'] = $this->original['post_title'];
-		$new_version['post_excerpt'] = $this->original['post_excerpt'];
+		$new_version['post_content'] = $this->original->post_content;
+		$new_version['post_name'] = $this->original->post_name;
+		$new_version['post_title'] = $this->original->post_title;
+		$new_version['post_excerpt'] = $this->original->post_excerpt;
 		$id = wp_insert_post($new_version);
 
-		update_post_meta($post['ID'], '_bu_version', $id);
+		update_post_meta($post->ID, '_bu_version', $id);
 
 		return $id;
 
@@ -534,6 +544,10 @@ class BU_Version {
 
 	function get_original_edit_url() {
 		return get_edit_post_link($this->original->ID, 'redirect');
+	}
+
+	function get_edit_url() {
+		return get_edit_post_link($this->post->ID);
 	}
 
 	function get_preview_URL() {
