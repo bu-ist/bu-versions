@@ -142,7 +142,13 @@ class BU_Version_Admin_UI {
 			if(isset($params['post_type'])) {
 				$v_manager = $this->v_factory->get($params['post_type']);
 				if(!is_null($v_manager)) {
-					$file = add_query_arg($file, $v_manager->get_orig_post_type());
+					$orig_post_type = $v_manager->get_orig_post_type();
+					if( $orig_post_type === 'post') {
+						$file = 'edit.php';
+					} else {
+						$file = add_query_arg($file, $v_manager->get_orig_post_type());
+					}
+
 				}
 			}
 		}
