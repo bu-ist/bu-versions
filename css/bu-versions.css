@@ -1,0 +1,25 @@
+/*
+Many of the styles for bu-versions are in place to adjust the post editor for the alternate versions
+*/
+
+.js div.notice {
+	display: none;
+}
+
+div.notice {
+	background-color: #e9f6e7;
+	border-color: #61c055;
+}
+
+
+.bu_alt_postedit.post-php .wrap h2 {
+	color: #009900;
+}
+
+.bu_alt_postedit #edit-slug-box {
+	display: none;
+}
+
+.bu_alt_postedit a.add-new-h2 {
+	display: none;
+}

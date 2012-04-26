@@ -55,7 +55,8 @@ class BU_Version_Workflow {
 			add_filter('parent_file', array(self::$admin, 'parent_file'));
 			add_action('admin_menu', array(self::$admin, 'admin_menu'));
 			add_action('admin_notices', array(self::$admin, 'admin_notices'));
-
+			add_filter('admin_body_class', array(self::$admin, 'admin_body_class'));
+			add_action('admin_enqueue_scripts', array(self::$admin, 'enqueue'), 10, 1);
 			add_action('load-admin_page_bu_create_version', array(self::$controller, 'load_create_version'));
 
 		}
@@ -73,6 +74,11 @@ class BU_Version_Admin_UI {
 
 	function __construct($v_factory) {
 		$this->v_factory = $v_factory;
+	}
+
+	function enqueue() {
+		wp_enqueue_script('bu-versions', plugins_url('/js/bu-versions.js', __FILE__));
+		wp_enqueue_style('bu-versions', plugins_url('/css/bu-versions.css', __FILE__));
 	}
 
 	function admin_menu() {
@@ -93,6 +99,20 @@ class BU_Version_Admin_UI {
 
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
 
+	}
+
+	function admin_body_class($classes) {
+		global $current_screen;
+
+		$post_type = $current_screen->post_type;
+		if($this->v_factory->is_alt($post_type)) {
+			if(empty($classes)) {
+				$classes = 'bu_alt_postedit';
+			} else {
+				$classes .= ' bu_alt_postedit';
+			}
+		}
+		return $classes;
 	}
 
 	/**
@@ -118,13 +138,13 @@ class BU_Version_Admin_UI {
 					$version = new BU_Version();
 					$version->get($post_id);
 					$label = lcfirst($original->labels->singular_name);
-					printf('<div class="notice"><h3>This is a clone of an existing %s and will replace the <a href="%s">original %s</a> when published.</h3></div>', $label, $version->get_original_edit_url(), $label);
+					printf('<div class="updated notice"><p>This is a clone of an existing %s and will replace the <a href="%s" target="_blank">original %s</a> when published.</p></div>', $label, $version->get_original_edit_url(), $label);
 				} else {
 					$manager = $this->v_factory->get_alt_manager($post->post_type);
 					if(isset($manager)) {
 						$versions = $manager->get_versions($post_id);
 						if(is_array($versions) && !empty($versions)) {
-							printf('<div class="notice"><h3>There is an alternate version for this page. <a href="%s">Edit</a></h3></div>', $versions[0]->get_edit_url());
+							printf('<div class="updated notice"><p>There is an alternate version for this page. <a href="%s" target="_blank">Edit</a></p></div>', $versions[0]->get_edit_url());
 						}
 					}
 				}
