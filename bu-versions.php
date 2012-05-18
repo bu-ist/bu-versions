@@ -26,6 +26,8 @@
 // $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
 
 
+// apply_filters( 'get_edit_post_link', admin_url( sprintf($post_type_object->_edit_link . $action, $post->ID) ), $post->ID, $context );
+
 
 class BU_Version_Workflow {
 
@@ -184,6 +186,11 @@ class BU_VPost_Factory {
 		$this->v_post_types = array();
 	}
 
+	/**
+	 * Registers an "alt" post type for each post_type that has show_ui enabled.
+	 *
+	 * Capabilities are inherited from the parent post_type.
+	 */
 	function register_post_types() {
 
 		$labels = array(
@@ -205,9 +212,7 @@ class BU_VPost_Factory {
 			'labels' => $labels,
 			'description' => '',
 			'publicly_queryable' => true,
-			'exclude_from_search' => false,
-			'capability_type' => array('edit_pages'),
-			//'capabilities' => array(), // need to figure out the capabilities piece
+			'exclude_from_search' => true,
 			'map_meta_cap' => true,
 			'hierarchical' => false,
 			'rewrite' => false,
@@ -226,7 +231,7 @@ class BU_VPost_Factory {
 		);
 
 
-		$post_types = get_post_types(array('show_ui' => true));
+		$post_types = get_post_types(array('show_ui' => true), 'objects');
 
 		foreach($post_types as $type) {
 
@@ -235,11 +240,12 @@ class BU_VPost_Factory {
 			if(false === apply_filters('bu_alt_versions_for_type', true, $type)) {
 				continue;
 			}
-
+			$default_args['capability_type'] = $type->capability_type;
 			$args = apply_filters('bu_alt_version_args', $default_args, $type);
-			//$args['hierarchical'] = $type;
-			$v_post_type = $type . '_alt_version';
-			$this->v_post_types[$v_post_type] = new BU_Version_Manager($type, $v_post_type, $args);
+
+			$v_post_type = $type->name . '_alt_version';
+
+			$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args);
 		}
 	}
 
@@ -391,7 +397,7 @@ class BU_Version_Manager_Admin {
 		$version_id = get_post_meta($post_id, '_bu_version', true);
 		if(!empty($version_id)) {
 			$version = new BU_Version($version_id);
-			printf('<a href="%s" title="%s">edit version</a>', get_edit_post_link($version_id, true), esc_attr(__( 'Edit this item')));
+			printf('<a class="bu_version_edit" href="%s" title="%s">edit version</a>', get_edit_post_link($version_id, true), esc_attr(__( 'Edit this item')));
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {

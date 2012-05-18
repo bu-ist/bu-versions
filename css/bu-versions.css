@@ -23,3 +23,18 @@ div.notice {
 .bu_alt_postedit a.add-new-h2 {
 	display: none;
 }
+
+
+.bu_version_edit {
+	background: url(../images/page_edit.png) no-repeat;
+	min-height: 18px;
+	display: block;
+	padding-left: 20px;
+}
+
+.bu_version_clone {
+	background: url(../images/page_copy.png) no-repeat;
+	min-height: 18px;
+	display: block;
+	padding-left: 20px;
+}
