@@ -243,9 +243,14 @@ class BU_VPost_Factory {
 			$default_args['capability_type'] = $type->capability_type;
 			$args = apply_filters('bu_alt_version_args', $default_args, $type);
 
-			$v_post_type = $type->name . '_alt_version';
+			$v_post_type = $type->name . '_alt';
 
-			$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args);
+			$register = register_post_type($v_post_type, $args);
+			if(!is_wp_error($register)) {
+				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args);
+			} else {
+				error_log(sprintf('The alternate post type %s could not be registered. Error: %s', $v_post_type, $register->get_error_message()));
+			}
 		}
 	}
 
@@ -298,8 +303,7 @@ class BU_Version_Manager {
 	public $orig_post_type = null;
 	public $admin = null;
 
-	function __construct($orig_post_type, $post_type, $args) {
-		register_post_type($post_type, $args);
+	function __construct($orig_post_type, $post_type) {
 		$this->post_type = $post_type;
 		$this->orig_post_type = $orig_post_type;
 
@@ -347,16 +351,6 @@ class BU_Version_Manager {
 		return $versions;
 
 	}
-
-	function add_caps() {
-		// get_roles
-
-		// foreach roles as role
-
-		// if ! has_cap then add cap
-		// need to have filtering to allow a plugin/theme to control whether caps are added automatically
-	}
-
 
 }
 
