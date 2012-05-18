@@ -49,6 +49,7 @@ class BU_Version_Workflow {
 		add_action('transition_post_status', array(self::$controller, 'publish_version'), 10, 3);
 		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
 		add_filter('template_redirect', array(self::$controller, 'redirect_preview'));
+		add_action('delete_post', array(self::$controller, 'delete_alt_version'));
 
 		add_rewrite_tag('%version_id%', '[^&]+'); // bring the revision id variable to life
 
@@ -487,7 +488,15 @@ class BU_Version_Controller {
 	}
 
 
-	function trash_alt_version() {
+	function delete_alt_version($post_id) {
+		$post = get_post($post_id);
+		$alt_types = $this->v_factory->get_alt_types();
+
+		if(is_array($alt_types) && in_array($post->post_type, $alt_types)) {
+			$version = new BU_Version();
+			$version->get($post_id);
+			$version->delete_parent_meta();
+		}
 
 	}
 
@@ -545,10 +554,14 @@ class BU_Version {
 		$post['post_excerpt'] = $this->post->post_excerpt;
 		wp_update_post($post);
 		wp_delete_post($this->post->ID);
-		delete_post_meta($this->original->ID, '_bu_version');
+		$this->delete_parent_meta();
 
 		return true;
 
+	}
+
+	function delete_parent_meta() {
+		delete_post_meta($this->original->ID, '_bu_version');
 	}
 
 	function get_id() {
