@@ -486,9 +486,16 @@ class BU_Version_Controller {
 		}
 	}
 
+
+	function trash_alt_version() {
+
+	}
+
 	static function create_version_view() {
 		   // no-op
 	}
+
+
 
 }
 // @see _set_preview() -- WordPress uses the autosave to generate previews. We can use
