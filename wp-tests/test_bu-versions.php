@@ -1,6 +1,6 @@
 <?php
 
-if(!defined('TEST_WP')) return;
+if(!class_exists(WPTestCase)) return;
 
 class Test_BU_Versions extends WPTestCase {
 
@@ -15,9 +15,9 @@ class Test_BU_Versions extends WPTestCase {
 	function test_create_version() {
 		list($original_post, $version_post) = $this->create_version();
 
-		$this->assertEquals($version_post->post_type, 'page_revision');
+		$this->assertEquals($version_post->post_type, 'page_alt');
 		$this->assertEquals($version_post->post_author, $original_post->post_author);
-		$this->assertEquals($version_post->post_parent, $original_post->post_parent);
+		$this->assertEquals($version_post->post_parent, $original_post->ID);
 		$this->assertEquals($version_post->post_title, $original_post->post_title);
 		$this->assertEquals($version_post->post_content, $original_post->post_content);
 
@@ -25,39 +25,50 @@ class Test_BU_Versions extends WPTestCase {
 
 	function test_publish_version() {
 
-		list($original_post, $version_post) = $this->create_version();
+		list($original_post, $alt_version) = $this->create_version();
 
 		$new_content = 'new content';
-		$version_post->post_content = $new_content;
-		wp_update_post((array) $version_post);
+		$alt_version->post_content = $new_content;
+		wp_update_post((array) $alt_version);
 
-		$version =  new BU_Revision($version_post->ID);
-
+		$version =  new BU_Version();
+		$version->get($alt_version->ID);
 		$version->publish();
 
-		$new_original = get_post($version_post->post_parent);
+		$new_original = get_post($alt_version->post_parent);
 
 		$this->assertEquals($new_original->post_content, $new_content);
 
-		$old_version = get_post($version_post->ID);
+		$old_version = get_post($alt_version->ID);
 
-		$this->assertFalse($old_version);
+		$this->assertNull($old_version);
+
+	}
+
+
+	function test_delete_original() {
+		list($original_post, $alt_version) = $this->create_version();
+
+		wp_delete_post($original_post->ID, true);
+
+		$alt_post = get_post($alt_version->ID);
+
+		$this->assertNull($alt_post);
 
 	}
 
 	function create_version() {
 		$this->_insert_quick_posts(1, 'page');
 		$post_id = end($this->post_ids);
-
 		$original_post = get_post($post_id);
 
-		$version = new BU_Revision($original_post);
+		$v_factory = BU_Version_Workflow::$v_factory;
 
-		$id = $version->create();
+		$v_page_manager = $v_factory->get_alt_manager('page');
 
-		$version_post = get_post($id);
+		$version = $v_page_manager->create($post_id);
 
-		return array($original_post, $version_post);
+		return array($original_post, $version->post);
 	}
 
 }

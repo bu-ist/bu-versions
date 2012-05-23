@@ -49,8 +49,12 @@ class BU_Version_Workflow {
 		add_action('transition_post_status', array(self::$controller, 'publish_version'), 10, 3);
 		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
 		add_filter('template_redirect', array(self::$controller, 'redirect_preview'));
-		add_action('delete_post', array(self::$controller, 'delete_alt_version'));
 
+		if(version_compare($GLOBALS['wp_version'], '3.3.2', '>=')) {
+			add_action('before_delete_post', array(self::$controller, 'delete_alt_version'));
+		} else {
+			add_action('delete_post', array(self::$controller, 'delete_alt_version'));
+		}
 		add_rewrite_tag('%version_id%', '[^&]+'); // bring the revision id variable to life
 
 		if(is_admin()) {
@@ -496,6 +500,11 @@ class BU_Version_Controller {
 			$version = new BU_Version();
 			$version->get($post_id);
 			$version->delete_parent_meta();
+		} elseif($post->post_type != 'revision') {
+			$alt_post_id = get_post_meta($post_id, '_bu_version', true);
+			if(get_post($alt_post_id)) {
+				wp_delete_post($alt_post_id);
+			}
 		}
 
 	}
