@@ -3,7 +3,10 @@ jQuery(function($) {
 	$('.wrap h2').after(notice);
 	notice.show();
 
-	$('.bu_alt_postedit #publish').val('Replace Original');
+	var $button = $('.bu_alt_postedit #publish');
+	if($button.val() == 'Publish') {
+		$button.val('Replace Original');
+	}
 
 });
 
