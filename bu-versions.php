@@ -11,12 +11,6 @@
  *
  *
  *
- * New Page Revision has to be dealt with. (perhaps with a css+js hack)
- * or/ can the page listing + revision listing combined into a single view.
- * -- there could be a way to attach a draft to a page
- *
- *
- * Perhaps alternate version should be captured as postmeta, too?
  *
  */
 
@@ -51,11 +45,12 @@ class BU_Version_Workflow {
 		add_filter('template_redirect', array(self::$controller, 'redirect_preview'));
 
 		if(version_compare($GLOBALS['wp_version'], '3.3.2', '>=')) {
-			add_action('before_delete_post', array(self::$controller, 'delete_alt_version'));
+			add_action('before_delete_post', array(self::$controller, 'delete_post_handler'));
 		} else {
-			add_action('delete_post', array(self::$controller, 'delete_alt_version'));
+			add_action('delete_post', array(self::$controller, 'delete_post_handler'));
 		}
-		add_rewrite_tag('%version_id%', '[^&]+'); // bring the revision id variable to life
+
+		add_rewrite_tag('%version_id%', '[^&]+'); // bring the version id variable to life
 
 		if(is_admin()) {
 			self::$admin = new BU_Version_Admin_UI(self::$v_factory);
@@ -72,7 +67,7 @@ class BU_Version_Workflow {
 
 }
 
-add_action('init', array('BU_Version_Workflow', 'init'));
+add_action('init', array('BU_Version_Workflow', 'init'), 999);
 
 
 class BU_Version_Admin_UI {
@@ -235,7 +230,6 @@ class BU_VPost_Factory {
 			'show_in_menu' => false,
 		);
 
-
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
 
 		foreach($post_types as $type) {
@@ -357,6 +351,13 @@ class BU_Version_Manager {
 
 	}
 
+	function delete_versions($orig_post_id) {
+		$versions = $this->get_versions($orig_post_id);
+		foreach($versions as $version) {
+			wp_delete_post($version->ID, true);
+		}
+	}
+
 }
 
 class BU_Version_Manager_Admin {
@@ -407,7 +408,6 @@ class BU_Version_Manager_Admin {
 
 }
 
-// add class that can be used for each post_type
 
 class BU_Version_Controller {
 	public $v_factory;
@@ -492,7 +492,7 @@ class BU_Version_Controller {
 	}
 
 
-	function delete_alt_version($post_id) {
+	function delete_post_handler($post_id) {
 		$post = get_post($post_id);
 		$alt_types = $this->v_factory->get_alt_types();
 
@@ -501,12 +501,12 @@ class BU_Version_Controller {
 			$version->get($post_id);
 			$version->delete_parent_meta();
 		} elseif($post->post_type != 'revision') {
-			$alt_post_id = get_post_meta($post_id, '_bu_version', true);
-			if(get_post($alt_post_id)) {
-				wp_delete_post($alt_post_id);
+			$manager = $this->v_factory->get_alt_manager($post->post_type);
+			if($manager) {
+				$manager->delete_versions($post->ID);
 			}
-		}
 
+		}
 	}
 
 	static function create_version_view() {
