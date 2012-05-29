@@ -51,6 +51,7 @@ class BU_Version_Workflow {
 		}
 
 		add_rewrite_tag('%version_id%', '[^&]+'); // bring the version id variable to life
+		add_filter('get_edit_post_link', array(self::$controller, 'override_edit_post_link'), 10, 3);
 
 		if(is_admin()) {
 			self::$admin = new BU_Version_Admin_UI(self::$v_factory);
@@ -507,6 +508,17 @@ class BU_Version_Controller {
 			}
 
 		}
+	}
+
+	function override_edit_post_link($url, $post_id, $context) {
+
+		$version_id = get_query_var('version_id');
+		if(!empty($version_id) && $post_id != $version_id) {
+			$version = new BU_Version;
+			$version->get($version_id);
+			$url = $version->get_edit_url();
+		}
+		return $url;
 	}
 
 	static function create_version_view() {
