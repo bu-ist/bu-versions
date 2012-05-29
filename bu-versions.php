@@ -600,8 +600,8 @@ class BU_Version {
 	function get_preview_URL() {
 		if(!isset($this->original) || !isset($this->post)) return null;
 
-		$permalink = get_permalink($this->post);
-		$url = add_query_arg(array('version_id' => $this->post->ID, 'preview'=> 'true', 'p' => $this->post->post_parent, 'post_type' => $this->original->post_type), $permalink);
+		$permalink = get_permalink($this->original);
+		$url = add_query_arg(array('version_id' => $this->post->ID, 'preview'=> 'true'), $permalink);
 		return $url;
 	}
 }
