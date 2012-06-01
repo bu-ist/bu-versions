@@ -241,6 +241,7 @@ class BU_VPost_Factory {
 				continue;
 			}
 			$default_args['capability_type'] = $type->capability_type;
+
 			$args = apply_filters('bu_alt_version_args', $default_args, $type);
 
 			$v_post_type = $type->name . '_alt';
@@ -568,8 +569,7 @@ class BU_Version {
 	function publish() {
 		if(!isset($this->original) || !isset($this->post)) return false;
 
-		$post = array();
-		$post['ID'] = $this->original->ID;
+		$post = (array) $this->original;
 		$post['post_title'] = $this->post->post_title;
 		$post['post_content'] = $this->post->post_content;
 		$post['post_excerpt'] = $this->post->post_excerpt;

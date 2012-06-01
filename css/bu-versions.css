@@ -7,13 +7,13 @@ Many of the styles for bu-versions are in place to adjust the post editor for th
 }
 
 div.notice {
-	background-color: #e9f6e7;
-	border-color: #61c055;
+	background-color: #eff4f8;
+	border-color: #0881d7;
 }
 
 
-.bu_alt_postedit.post-php .wrap h2 {
-	color: #009900;
+.bu_alt_postedit .wrap h2 {
+	color: #0881d7;
 }
 
 .bu_alt_postedit #edit-slug-box {
@@ -23,7 +23,7 @@ div.notice {
 .bu_alt_postedit a.add-new-h2 {
 	display: none;
 }
-
+/*
 .bu_alt_postedit #publish {
 	background: url("../images/button-grad.png")
 }
@@ -31,8 +31,16 @@ div.notice {
 .bu_alt_postedit #publish:hover {
 	background: url("../images/button-grad-active.png")
 }
+*/
+
+.bu_alt_postedit #icon-edit.icon32-posts-pagealt {
+	background: transparent url("../images/pages_alt.png") no-repeat 0 0;
+}
 
 
+.bu_alt_postedit #icon-edit.icon32-posts-postalt {
+	background: transparent url("../images/posts_alt.png") no-repeat 0 0;
+}
 
 .bu_version_edit {
 	background: transparent url("../images/page_edit.png") no-repeat 0 0;
