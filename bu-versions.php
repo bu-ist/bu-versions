@@ -140,7 +140,12 @@ class BU_Version_Admin_UI {
 					$original = get_post_type_object($type->get_orig_post_type());
 					$version = new BU_Version();
 					$version->get($post_id);
-					$label = lcfirst($original->labels->singular_name);
+					if(function_exists(lcfirst)) {
+						$label = lcfirst($original->labels->singular_name);
+					} else {
+						$label = $original->labels->singular_name;
+						$label[0] = strtolower($label[0]);
+					}
 					printf('<div class="updated notice"><p>This is a clone of an existing %s and will replace the <a href="%s" target="_blank">original %s</a> when published.</p></div>', $label, $version->get_original_edit_url(), $label);
 				} else {
 					$manager = $this->v_factory->get_alt_manager($post->post_type);
@@ -538,10 +543,6 @@ class BU_Version {
 
 	public $original;
 	public $post;
-
-	function __construct() {
-	}
-
 
 	function get($version_id) {
 		$this->post = get_post($version_id);
