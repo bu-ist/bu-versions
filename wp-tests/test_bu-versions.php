@@ -1,10 +1,11 @@
 <?php
 
-if(!class_exists(WPTestCase)) return;
 
-class Test_BU_Versions extends WPTestCase {
+class Test_BU_Versions extends WP_UnitTestCase {
 
 	function setUp() {
+		$user = get_user_by('login', 'admin');
+		wp_set_current_user($user->ID);
 		parent::setUp();
 	}
 
@@ -20,6 +21,10 @@ class Test_BU_Versions extends WPTestCase {
 		$this->assertEquals($version_post->post_parent, $original_post->ID);
 		$this->assertEquals($version_post->post_title, $original_post->post_title);
 		$this->assertEquals($version_post->post_content, $original_post->post_content);
+
+	}
+
+	function test_update_version() {
 
 	}
 
@@ -48,18 +53,20 @@ class Test_BU_Versions extends WPTestCase {
 
 	function test_delete_original() {
 		list($original_post, $alt_version) = $this->create_version();
-
 		wp_delete_post($original_post->ID, true);
-
 		$alt_post = get_post($alt_version->ID);
 
 		$this->assertNull($alt_post);
 
 	}
 
+	function test_contributor_permissions() {
+
+	}
+
 	function create_version() {
-		$this->_insert_quick_posts(1, 'page');
-		$post_id = end($this->post_ids);
+		$post_id = $this->insert_post('page');
+
 		$original_post = get_post($post_id);
 
 		$v_factory = BU_Version_Workflow::$v_factory;
@@ -69,6 +76,22 @@ class Test_BU_Versions extends WPTestCase {
 		$version = $v_page_manager->create($post_id);
 
 		return array($original_post, $version->post);
+	}
+
+	function insert_post($type = 'page', $author = 'admin') {
+
+			$user = get_user_by('login', $author);
+
+			$post = array(
+				'post_author' => $user->ID,
+				'post_status' => 'publish',
+				'post_title' => "{$type} title",
+				'post_content' => "{$type} content",
+				'post_excerpt' => "{$type} excerpt",
+				'post_type' => $type
+			);
+			return wp_insert_post($post);
+
 	}
 
 }
