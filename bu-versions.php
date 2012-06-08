@@ -3,7 +3,7 @@
 /*
  Plugin Name: BU Versions
  Description: Make and review edits to published content.
- Version: 0.2
+ Version: 0.3
  Author: Boston University (IS&T)
 */
 
@@ -361,7 +361,7 @@ class BU_Version_Manager {
 	function delete_versions($orig_post_id) {
 		$versions = $this->get_versions($orig_post_id);
 		foreach($versions as $version) {
-			wp_delete_post($version->ID, true);
+			$version->delete_version();
 		}
 	}
 
@@ -575,11 +575,14 @@ class BU_Version {
 		$post['post_content'] = $this->post->post_content;
 		$post['post_excerpt'] = $this->post->post_excerpt;
 		wp_update_post($post);
-		wp_delete_post($this->post->ID);
-		$this->delete_parent_meta();
-
+		$this->delete_version();
 		return true;
 
+	}
+
+	function delete_version() {
+		wp_delete_post($this->post->ID);
+		$this->delete_parent_meta();
 	}
 
 	function delete_parent_meta() {
