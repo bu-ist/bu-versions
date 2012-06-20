@@ -131,15 +131,14 @@ class BU_Version_Admin_UI {
 
 		if($current_screen->base == 'post') {
 
-			$post_id = $post_ID;
-			if($post_id) {
-				$post = get_post($post_id);
+			if($post_ID) {
+				$post = get_post($post_ID);
 
 				if($this->v_factory->is_alt($post->post_type)) {
 					$type = $this->v_factory->get($post->post_type);
 					$original = get_post_type_object($type->get_orig_post_type());
 					$version = new BU_Version();
-					$version->get($post_id);
+					$version->get($post_ID);
 					if(function_exists(lcfirst)) {
 						$label = lcfirst($original->labels->singular_name);
 					} else {
@@ -403,8 +402,9 @@ class BU_Version_Manager_Admin {
 		if($column_name != 'alternate_versions') return;
 		$version_id = get_post_meta($post_id, '_bu_version', true);
 		if(!empty($version_id)) {
-			$version = new BU_Version($version_id);
-			printf('<a class="bu_version_edit" href="%s" title="%s">edit version</a>', get_edit_post_link($version_id, true), esc_attr(__( 'Edit this item')));
+			$version = new BU_Version();
+			$version->get($version_id);
+			printf('<a class="bu_version_edit" href="%s" title="%s">edit version</a>', $version->get_edit_url('display'), esc_attr(__( 'Edit this item')));
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
@@ -534,11 +534,7 @@ class BU_Version_Controller {
 
 
 }
-// @see _set_preview() -- WordPress uses the autosave to generate previews. We can use
-// the same approach when overriding the display of a page.
 
-
-// should be composite of the original and its versions
 class BU_Version {
 
 	public $original;
@@ -593,12 +589,12 @@ class BU_Version {
 		return $this->post->ID;
 	}
 
-	function get_original_edit_url() {
-		return get_edit_post_link($this->original->ID, 'redirect');
+	function get_original_edit_url($context = null) {
+		return get_edit_post_link($this->original->ID, $context);
 	}
 
-	function get_edit_url() {
-		return get_edit_post_link($this->post->ID);
+	function get_edit_url($context = 'display') {
+		return get_edit_post_link($this->post->ID, $context);
 	}
 
 	function get_preview_URL() {
