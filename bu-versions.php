@@ -139,7 +139,7 @@ class BU_Version_Admin_UI {
 					$original = get_post_type_object($type->get_orig_post_type());
 					$version = new BU_Version();
 					$version->get($post_ID);
-					if(function_exists(lcfirst)) {
+					if(function_exists('lcfirst')) {
 						$label = lcfirst($original->labels->singular_name);
 					} else {
 						$label = $original->labels->singular_name;
@@ -149,7 +149,7 @@ class BU_Version_Admin_UI {
 				} else {
 					$manager = $this->v_factory->get_alt_manager($post->post_type);
 					if(isset($manager)) {
-						$versions = $manager->get_versions($post_id);
+						$versions = $manager->get_versions($post_ID);
 						if(is_array($versions) && !empty($versions)) {
 							printf('<div class="updated notice"><p>There is an alternate version for this page. <a href="%s" target="_blank">Edit</a></p></div>', $versions[0]->get_edit_url());
 						}
