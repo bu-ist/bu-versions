@@ -165,6 +165,7 @@ class BU_Version_Admin_UI {
 	function parent_file($file) {
 		if(strpos($file, 'edit.php') !== false) {
 			$parts = parse_url($file);
+			if(!isset($parts['query'])) return $file;
 			$params = null;
 			parse_str($parts['query'], $params);
 			if(isset($params['post_type'])) {
