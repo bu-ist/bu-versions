@@ -153,6 +153,14 @@ class BU_Version_Admin_UI {
 						if(is_array($versions) && !empty($versions)) {
 							printf('<div class="updated notice"><p>There is an alternate version for this page. <a href="%s" target="_blank">Edit</a></p></div>', $versions[0]->get_edit_url());
 						}
+
+						// post overwritten with alternate version
+
+						$overwritten_post_id = get_option('_bu_version_post_overwritten');
+						if(!empty($overwritten_post_id) && $post->ID == $overwritten_post_id) {
+							printf('<div class="updated notice"><p>The alternate version has replace the data of this post and been deleted.</p></div>');
+							delete_option('_bu_version_post_overwritten');
+						}
 					}
 				}
 
@@ -573,6 +581,7 @@ class BU_Version {
 		$post['post_excerpt'] = $this->post->post_excerpt;
 		wp_update_post($post);
 		$this->delete_version();
+		add_option('_bu_version_post_overwritten', $post['ID']);
 		return true;
 
 	}
