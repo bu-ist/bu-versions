@@ -341,6 +341,10 @@ class BU_Version_Manager {
 
 	function create($post_id) {
 		$post = get_post($post_id);
+		if(!$post) {
+			$error = new WP_Error('original_not_found', 'The post to clone could not be found');
+			return $error;
+		}
 		$version = new BU_Version();
 		$version->create($post, $this->post_type);
 		return $version;
@@ -508,14 +512,20 @@ class BU_Version_Controller {
 			$post_id = (int) $_GET['post'];
 
 			$post = get_post($post_id);
+			if(!$post) {
+				wp_die("The post to be cloned could not be found.");
+			}
 
 			$v_manager = $this->v_factory->get_alt_manager($post->post_type);
 
 			$version = $v_manager->create($post_id);
-
-			$redirect_url = add_query_arg(array('post' => $version->get_id(), 'action' => 'edit'), 'post.php');
-			wp_redirect($redirect_url);
-			exit();
+			if(!is_wp_error($version)) {
+				$redirect_url = add_query_arg(array('post' => $version->get_id(), 'action' => 'edit'), 'post.php');
+				wp_redirect($redirect_url);
+				exit();
+			} else {
+				wp_die("The alternate version could not be created.");
+			}
 		}
 	}
 
@@ -566,6 +576,14 @@ class BU_Version {
 		$this->original = get_post($this->post->post_parent);
 	}
 
+	/**
+	 * create 
+	 * 
+	 * @param mixed $post 
+	 * @param mixed $alt_post_type 
+	 * @access public
+	 * @return void
+	 */
 	function create($post, $alt_post_type) {
 		$this->original = $post;
 		$new_version['post_type'] = $alt_post_type;
@@ -576,11 +594,12 @@ class BU_Version {
 		$new_version['post_name'] = $this->original->post_name;
 		$new_version['post_title'] = $this->original->post_title;
 		$new_version['post_excerpt'] = $this->original->post_excerpt;
-		$id = wp_insert_post($new_version);
-		$this->post = get_post($id);
-		update_post_meta($post->ID, '_bu_version', $id);
-
-		return $id;
+		$result = wp_insert_post($new_version);
+		if(!is_wp_error($result)) {
+			$this->post = get_post($result);
+			update_post_meta($this->original->ID, '_bu_version', $this->post->ID);
+		}
+		return $result;
 
 	}
 
