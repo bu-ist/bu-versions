@@ -62,6 +62,8 @@ class BU_Version_Workflow {
 			add_action('delete_post', array(self::$controller, 'delete_post_handler'));
 		}
 
+		add_action('map_meta_cap', array(self::$controller, 'map_meta_cap'), 20, 4);
+
 		add_rewrite_tag('%version_id%', '[^&]+'); // bring the version id variable to life
 		add_filter('get_edit_post_link', array(self::$controller, 'override_edit_post_link'), 10, 3);
 
@@ -254,6 +256,7 @@ class BU_VPost_Factory {
 			'can_export' => true,
 			'show_in_nav_menus' => false,
 			'show_in_menu' => false,
+			'public' => true
 		);
 
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
@@ -448,6 +451,22 @@ class BU_Version_Controller {
 		$this->v_factory = $v_factory;
 	}
 
+	function map_meta_cap($caps, $cap, $user_id, $args) {
+
+		if(isset($_GET['version_id'])) {
+			$version_id = (int) trim($_GET['version_id']);
+			$version = new BU_Version();
+			$version->get($version_id);
+			if(is_object($version->original)) {
+				$post_type = get_post_type_object($version->original->post_type);
+				$caps = array($post_type->cap->edit_posts);
+			}
+
+		}
+
+		return $caps;
+	}
+
 	function get_URL($post) {
 		$url = 'admin.php?page=bu_create_version';
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
@@ -490,7 +509,6 @@ class BU_Version_Controller {
 			return $post;
 
 		$version_id = (int) get_query_var('version_id');
-
 		$preview = wp_get_post_autosave($version_id);
 		if ( ! is_object($preview) ) {
 			$preview = get_post($version_id);
