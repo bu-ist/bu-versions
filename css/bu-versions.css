@@ -32,11 +32,13 @@ div.notice {
 	background: url("../images/button-grad-active.png")
 }
 
+.bu_alt_postedit #icon-edit.icon32-posts-pagealt,
 .bu_alt_postedit #icon-edit.icon32-posts-page_alt {
 	background: transparent url("../images/pages_alt.png") no-repeat 0 0;
 }
 
 
+.bu_alt_postedit #icon-edit.icon32-posts-postalt,
 .bu_alt_postedit #icon-edit.icon32-posts-post_alt {
 	background: transparent url("../images/posts_alt.png") no-repeat 0 0;
 }
