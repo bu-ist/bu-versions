@@ -1,6 +1,8 @@
 <?php
 
-
+/**
+ * @group bu-versions
+ */
 class Test_BU_Versions extends WP_UnitTestCase {
 
 	function setUp() {
@@ -21,10 +23,6 @@ class Test_BU_Versions extends WP_UnitTestCase {
 		$this->assertEquals($version_post->post_parent, $original_post->ID);
 		$this->assertEquals($version_post->post_title, $original_post->post_title);
 		$this->assertEquals($version_post->post_content, $original_post->post_content);
-
-	}
-
-	function test_update_version() {
 
 	}
 
@@ -57,10 +55,6 @@ class Test_BU_Versions extends WP_UnitTestCase {
 		$alt_post = get_post($alt_version->ID);
 
 		$this->assertNull($alt_post);
-
-	}
-
-	function test_contributor_permissions() {
 
 	}
 
