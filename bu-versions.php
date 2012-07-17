@@ -260,6 +260,14 @@ class BU_VPost_Factory {
 		);
 
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
+		
+		
+		$alt_supported_features = array(
+			'thumbnail' => array('_thumbnail_id')
+		);
+
+		$meta_supports = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
+		
 
 		foreach($post_types as $type) {
 
@@ -268,15 +276,28 @@ class BU_VPost_Factory {
 			if(false === apply_filters('bu_alt_versions_for_type', true, $type)) {
 				continue;
 			}
+			
 			$default_args['capability_type'] = $type->capability_type;
-
+			
+			foreach(array_keys($alt_supported_features) as $feature) {
+				if( post_type_supports($this->name, $feature) ) {
+					$default_args['supports'] = $feature;
+				}
+			}
+			
+			
 			$args = apply_filters('bu_alt_version_args', $default_args, $type);
 
+			$meta_keys = array();
+			foreach( $args['supports'] as $feature ) {
+				$meta_keys[] = $alt_supported_features[ $feature ];
+			}	
+			
 			$v_post_type = $type->name . '_alt';
 
 			$register = register_post_type($v_post_type, $args);
 			if(!is_wp_error($register)) {
-				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args);
+				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args, $meta_keys);
 			} else {
 				error_log(sprintf('The alternate post type %s could not be registered. Error: %s', $v_post_type, $register->get_error_message()));
 			}
@@ -323,6 +344,8 @@ class BU_Version_Manager {
 	 */
 	public $post_type = null;
 
+	public $meta_keys;
+	
 	/**
 	 * Post type of the originals
 	 *
@@ -332,9 +355,11 @@ class BU_Version_Manager {
 	public $orig_post_type = null;
 	public $admin = null;
 
-	function __construct($orig_post_type, $post_type) {
+	function __construct($orig_post_type, $post_type, $args, $meta_keys) {
+		
 		$this->post_type = $post_type;
 		$this->orig_post_type = $orig_post_type;
+		$this->meta_keys = $meta_keys;
 
 		if(is_admin()) {
 			$this->admin = new BU_Version_Manager_Admin($this->post_type);
@@ -349,14 +374,32 @@ class BU_Version_Manager {
 			return $error;
 		}
 		$version = new BU_Version();
-		$version->create($post, $this->post_type);
+		$version->create($post, $this->post_type, $this->meta_keys);
 		return $version;
+	}
+
+	function publish($post_id) {
+			$version = new BU_Version();
+			$version->get($post->ID);
+			return $version->publish($this->meta_keys);
 	}
 
 	function get_orig_post_type() {
 		return $this->orig_post_type;
 	}
+	
 
+	function override_meta($val, $object_id, $key, $single) {
+		if(array_key_exists($key, $this->meta_keys) && isset($_GET['version_id'])) {
+			$version_id = (int) trim($_GET['version_id']);
+			$version = new BU_Version();
+			$version->get($version_id);
+			if($object_id == $version->original->ID) {
+				$val = get_post_meta($version->original->ID, $key, $single);
+			}
+		}	
+		return $val;
+	}
 
 	function get_versions($orig_post_id) {
 		$args = array(
@@ -476,14 +519,34 @@ class BU_Version_Controller {
 	function publish_version($new_status, $old_status, $post) {
 
 		if($new_status === 'publish' && $old_status !== 'publish' && $this->v_factory->is_alt($post->post_type)) {
-			$version = new BU_Version();
-			$version->get($post->ID);
-			$version->publish();
-			// Is this the appropriate spot for a redirect?
-			wp_redirect($version->get_original_edit_url());
-			exit;
+
+			$manager = $this->v_factory->get($post->post_type);
+			if( $manager->publish($post_id) ) {
+				wp_redirect($version->get_original_edit_url());
+				exit;
+			} else {
+				wp_die("The alternate version id: $post_id could not be published.");
+			}
 		}
 	}
+	
+	/**
+	 * Add filters to override post meta data
+	 **/
+
+	function override_meta() {
+		if(is_preview() && isset($_GET['version_id'])) {
+			$version_id = (int) trim($_GET['version_id']);
+			$version = new BU_Version();
+			$version->get($version_id);
+			if(isset($version->post->post_type)) {
+				$manager = $this->v_factory->get($version->post->post_type);
+				add_filter('get_' . $version->post->post_type . '_metadata', array($manager, 'override_meta'), 10, 4); 
+			}
+		}
+	}
+	
+	
 	/**
 	 * Redirect page_version previews to the orginal page, but with a specific
 	 * parameter included that triggers the content to be replaced with the data
@@ -602,7 +665,7 @@ class BU_Version {
 	 * @access public
 	 * @return void
 	 */
-	function create($post, $alt_post_type) {
+	function create($post, $alt_post_type, $meta_keys) {
 		$this->original = $post;
 		$new_version['post_type'] = $alt_post_type;
 		$new_version['post_parent'] = $this->original->ID;
@@ -616,23 +679,53 @@ class BU_Version {
 		if(!is_wp_error($result)) {
 			$this->post = get_post($result);
 			update_post_meta($this->original->ID, '_bu_version', $this->post->ID);
+
 		}
 		return $result;
 
 	}
+	
+	/**
+	 * Because of sanization and serialization, it may be better to use SQL, but for now we are using the API
+	 **/ 
+	private function copy_original_meta($meta_keys) {
+		foreach( $meta_keys as $key ) {
+			$values = get_post_meta( $this->original->ID, $key );
+			foreach( $values as $v ) {
+				add_post_meta( $this->post->ID, $key, $v );
+			}
+		}
+	}
 
-	function publish() {
+	function publish($meta_keys = null) {
 		if(!isset($this->original) || !isset($this->post)) return false;
 
 		$post = (array) $this->original;
 		$post['post_title'] = $this->post->post_title;
 		$post['post_content'] = $this->post->post_content;
 		$post['post_excerpt'] = $this->post->post_excerpt;
-		wp_update_post($post);
-		$this->delete_version();
-		add_option('_bu_version_post_overwritten', $post['ID']);
-		return true;
+		$results = wp_update_post($post);
+		if( ! is_wp_error( $result ) ) {
+			$this->delete_version();
+			add_option('_bu_version_post_overwritten', $post['ID']);
+			if(isset($meta_keys)) {
+				$this->overwrite_original_meta( $meta_keys );
+			}
+		}
+		return $result;
 
+	}
+
+	private function overwrite_original_meta($meta_keys) {
+		foreach( $meta_keys as $key ) {
+			$values = get_post_meta( $this->post->ID, $key );
+			foreach( $values as $v ) {
+				// delete then add because we don't know how the new values 
+				// correspond to the original values for a given key
+				delete_post_meta( $this->original->ID, $key, $v );
+				add_post_meta( $this->original->ID, $key, $v );
+			}
+		}
 	}
 
 	function delete_version() {
