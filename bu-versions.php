@@ -263,12 +263,20 @@ class BU_VPost_Factory {
 		
 		
 		$alt_supported_features = array(
-			'thumbnail' => array('_thumbnail_id')
+			'thumbnail' => array('_thumbnail_id'),
+			'bu-post-details' => array( 
+				'_bu_thumbnail',
+				'_bu_page_description',
+				'_bu_meta_description',
+				'_bu_meta_mirror_description',
+				'_bu_meta_keywords',
+				'_bu_meta_robots',
+				'_bu_title'
+			)
 		);
 
-		$meta_supports = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
+		$alt_supported_features = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
 		
-
 		foreach($post_types as $type) {
 
 			// allow plugins/themes to control whether a post type supports alternate versions
@@ -277,20 +285,25 @@ class BU_VPost_Factory {
 				continue;
 			}
 			
-			$default_args['capability_type'] = $type->capability_type;
+			$args = $default_args;
+
+			$args['capability_type'] = $type->capability_type;
 			
 			foreach(array_keys($alt_supported_features) as $feature) {
-				if( post_type_supports($this->name, $feature) ) {
-					$default_args['supports'] = $feature;
+				if( post_type_supports($type->name, $feature) ) {
+					$args['supports'][] = $feature;
 				}
 			}
 			
 			
-			$args = apply_filters('bu_alt_version_args', $default_args, $type);
+			$args = apply_filters('bu_alt_version_args', $args, $type);
 
 			$meta_keys = array();
+			
 			foreach( $args['supports'] as $feature ) {
-				$meta_keys[] = $alt_supported_features[ $feature ];
+				if( isset( $alt_supported_features[ $feature ] ) ) {
+					$meta_keys = array_merge( $meta_keys, $alt_supported_features[ $feature ] );
+				}
 			}	
 			
 			$v_post_type = $type->name . '_alt';
@@ -380,8 +393,14 @@ class BU_Version_Manager {
 
 	function publish($post_id) {
 			$version = new BU_Version();
-			$version->get($post->ID);
-			return $version->publish($this->meta_keys);
+			$version->get($post_id);
+
+			$result =  $version->publish($this->meta_keys);
+			if( $result ) {
+				return $version;
+			} else {
+				return false;
+			}
 	}
 
 	function get_orig_post_type() {
@@ -521,11 +540,13 @@ class BU_Version_Controller {
 		if($new_status === 'publish' && $old_status !== 'publish' && $this->v_factory->is_alt($post->post_type)) {
 
 			$manager = $this->v_factory->get($post->post_type);
-			if( $manager->publish($post_id) ) {
+			$version = $manager->publish( $post->ID );	
+			if( $version ) {
+				die();
 				wp_redirect($version->get_original_edit_url());
 				exit;
 			} else {
-				wp_die("The alternate version id: $post_id could not be published.");
+				wp_die(sprintf('The alternate version id: %s could not be published.', $post->ID));
 			}
 		}
 	}
@@ -704,13 +725,13 @@ class BU_Version {
 		$post['post_title'] = $this->post->post_title;
 		$post['post_content'] = $this->post->post_content;
 		$post['post_excerpt'] = $this->post->post_excerpt;
-		$results = wp_update_post($post);
+		$result = wp_update_post($post);
 		if( ! is_wp_error( $result ) ) {
-			$this->delete_version();
-			add_option('_bu_version_post_overwritten', $post['ID']);
+			add_option('_bu_version_post_overwritten', $result);
 			if(isset($meta_keys)) {
 				$this->overwrite_original_meta( $meta_keys );
 			}
+			$this->delete_version();
 		}
 		return $result;
 
@@ -719,7 +740,7 @@ class BU_Version {
 	private function overwrite_original_meta($meta_keys) {
 		foreach( $meta_keys as $key ) {
 			$values = get_post_meta( $this->post->ID, $key );
-			foreach( $values as $v ) {
+			foreach( $values as $v ) {	
 				// delete then add because we don't know how the new values 
 				// correspond to the original values for a given key
 				delete_post_meta( $this->original->ID, $key, $v );
