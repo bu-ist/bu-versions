@@ -686,7 +686,7 @@ class BU_Version {
 	 * @access public
 	 * @return void
 	 */
-	function create($post, $alt_post_type, $meta_keys) {
+	function create($post, $alt_post_type, $meta_keys = null) {
 		$this->original = $post;
 		$new_version['post_type'] = $alt_post_type;
 		$new_version['post_parent'] = $this->original->ID;
@@ -699,6 +699,7 @@ class BU_Version {
 		$result = wp_insert_post($new_version);
 		if(!is_wp_error($result)) {
 			$this->post = get_post($result);
+			$this->copy_original_meta($meta_keys);
 			update_post_meta($this->original->ID, '_bu_version', $this->post->ID);
 
 		}
