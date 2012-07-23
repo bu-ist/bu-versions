@@ -3,7 +3,7 @@
 /*
  Plugin Name: BU Versions
  Description: Make and review edits to published content.
- Version: 0.3
+ Version: 0.4
  Author: Boston University (IS&T)
 */
 
@@ -25,14 +25,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 **/
-
-/// $views = apply_filters( 'views_' . $screen->id, $views );  // can be used to filter the views (All | Drafts | etc...
-
-
-// $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
-
-
-// apply_filters( 'get_edit_post_link', admin_url( sprintf($post_type_object->_edit_link . $action, $post->ID) ), $post->ID, $context );
 
 
 class BU_Version_Workflow {
@@ -278,7 +270,9 @@ class BU_VPost_Factory {
 			),
 			'bu-disable-autop' => array('_bu_disable_autop')
 		);
-
+		
+		// plugins/themes can add support for particular features by filtering 
+		// the array of supported features
 		$alt_supported_features = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
 		
 		foreach($post_types as $type) {
