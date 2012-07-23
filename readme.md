@@ -3,10 +3,17 @@ BU Versions is a WordPress plugin that adds new workflows to WordPress that make
 The plugin was written by [Boston University IS&T](http://www.bu.edu/tech) staff with design and UX support from the [Interactive Design](http://www.bu.edu/id)  group in Marketing & Communications.
 
 Features:
+
 * An alternate version can be created for each post or page.
 * Revision history is accessible for the alternate version.
 * Supports custom post types automatically.
 * Supports the cloning of post meta data.
+
+Roadmap:
+
+* Add support for page templates to the Alternate Version for pages.
+* Add an "Edit Version" link to the frontend admin bar.
+
 
 To report an issue, file an issue on [Github](https://github.com/bu-ist/bu-versions/issue).
 
