@@ -3,7 +3,7 @@
 /*
  Plugin Name: BU Versions
  Description: Make and review edits to published content.
- Version: 0.3
+ Version: 0.4
  Author: Boston University (IS&T)
 */
 
@@ -26,14 +26,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 **/
 
-/// $views = apply_filters( 'views_' . $screen->id, $views );  // can be used to filter the views (All | Drafts | etc...
-
-
-// $check = apply_filters( "get_{$meta_type}_metadata", null, $object_id, $meta_key, $single );
-
-
-// apply_filters( 'get_edit_post_link', admin_url( sprintf($post_type_object->_edit_link . $action, $post->ID) ), $post->ID, $context );
-
 
 class BU_Version_Workflow {
 
@@ -54,7 +46,9 @@ class BU_Version_Workflow {
 
 		add_action('transition_post_status', array(self::$controller, 'publish_version'), 10, 3);
 		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
-		add_filter('template_redirect', array(self::$controller, 'redirect_preview'));
+		
+		add_action('template_redirect', array(self::$controller, 'redirect_preview'));
+		add_action('template_redirect', array(self::$controller, 'override_meta'), 1);
 
 		if(version_compare($GLOBALS['wp_version'], '3.3.2', '>=')) {
 			add_action('before_delete_post', array(self::$controller, 'delete_post_handler'));
@@ -264,6 +258,7 @@ class BU_VPost_Factory {
 		
 		$alt_supported_features = array(
 			'thumbnail' => array('_thumbnail_id'),
+			'bu-content-banner' => array('_bu_banner'),
 			'bu-post-details' => array( 
 				'_bu_thumbnail',
 				'_bu_page_description',
@@ -272,9 +267,12 @@ class BU_VPost_Factory {
 				'_bu_meta_keywords',
 				'_bu_meta_robots',
 				'_bu_title'
-			)
+			),
+			'bu-disable-autop' => array('_bu_disable_autop')
 		);
-
+		
+		// plugins/themes can add support for particular features by filtering 
+		// the array of supported features
 		$alt_supported_features = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
 		
 		foreach($post_types as $type) {
@@ -409,14 +407,16 @@ class BU_Version_Manager {
 	
 
 	function override_meta($val, $object_id, $key, $single) {
-		if(array_key_exists($key, $this->meta_keys) && isset($_GET['version_id'])) {
+		if(in_array($key, $this->meta_keys) && isset($_GET['version_id'])) {
 			$version_id = (int) trim($_GET['version_id']);
 			$version = new BU_Version();
 			$version->get($version_id);
+			remove_filter('get_post_metadata', array($this, 'override_meta'), 10, 4);
 			if($object_id == $version->original->ID) {
-				$val = get_post_meta($version->original->ID, $key, $single);
+				$val = get_post_meta($version->post->ID, $key);
 			}
-		}	
+			add_filter('get_post_metadata', array($this, 'override_meta'), 10, 4);
+		}
 		return $val;
 	}
 
@@ -542,7 +542,6 @@ class BU_Version_Controller {
 			$manager = $this->v_factory->get($post->post_type);
 			$version = $manager->publish( $post->ID );	
 			if( $version ) {
-				die();
 				wp_redirect($version->get_original_edit_url());
 				exit;
 			} else {
@@ -562,7 +561,7 @@ class BU_Version_Controller {
 			$version->get($version_id);
 			if(isset($version->post->post_type)) {
 				$manager = $this->v_factory->get($version->post->post_type);
-				add_filter('get_' . $version->post->post_type . '_metadata', array($manager, 'override_meta'), 10, 4); 
+				add_filter('get_post_metadata', array($manager, 'override_meta'), 10, 4); 
 			}
 		}
 	}
@@ -621,7 +620,7 @@ class BU_Version_Controller {
 			$v_manager = $this->v_factory->get_alt_manager($post->post_type);
 
 			$version = $v_manager->create($post_id);
-			if(!is_wp_error($version)) {
+			if( ! is_wp_error($version)) {
 				$redirect_url = add_query_arg(array('post' => $version->get_id(), 'action' => 'edit'), 'post.php');
 				wp_redirect($redirect_url);
 				exit();
