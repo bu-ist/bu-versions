@@ -449,6 +449,7 @@ class BU_Version_Manager {
 
 	function delete_versions($orig_post_id) {
 		$versions = $this->get_versions($orig_post_id);
+		if( ! isset( $versions ) ) return;	
 		foreach($versions as $version) {
 			$version->delete_version();
 		}
@@ -713,7 +714,7 @@ class BU_Version {
 		foreach( $meta_keys as $key ) {
 			$values = get_post_meta( $this->original->ID, $key );
 			foreach( $values as $v ) {
-				add_post_meta( $this->post->ID, $key, $v );
+				update_post_meta( $this->post->ID, $key, $v );
 			}
 		}
 	}
@@ -740,10 +741,10 @@ class BU_Version {
 	private function overwrite_original_meta($meta_keys) {
 		foreach( $meta_keys as $key ) {
 			$values = get_post_meta( $this->post->ID, $key );
+			// delete then add because we don't know how the new values 
+			// correspond to the original values for a given key
+			delete_post_meta( $this->original->ID, $key );
 			foreach( $values as $v ) {	
-				// delete then add because we don't know how the new values 
-				// correspond to the original values for a given key
-				delete_post_meta( $this->original->ID, $key, $v );
 				add_post_meta( $this->original->ID, $key, $v );
 			}
 		}
