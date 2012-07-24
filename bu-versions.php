@@ -320,7 +320,7 @@ class BU_VPost_Factory {
 	}
 
 	function get($post_type) {
-		if(is_array($this->v_post_types)  && array_key_exists($post_type, $this->v_post_types)) {
+		if( $this->is_alt( $post_type ) ) {
 			return $this->v_post_types[$post_type];
 		} else {
 			return null;
@@ -341,7 +341,7 @@ class BU_VPost_Factory {
 	}
 
 	function is_alt($post_type) {
-		return array_key_exists($post_type, $this->v_post_types);
+		return is_array($this->v_post_types) && array_key_exists($post_type, $this->v_post_types);
 	}
 
 }
