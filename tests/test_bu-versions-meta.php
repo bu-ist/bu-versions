@@ -20,6 +20,7 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 		remove_filter('bu_alt_versions_feature_support', array($this, 'awesome_foo_alt_versions'), 10, 1);
 		remove_action('save_post', array($this, 'save_post_handler'), 10, 2);
 		unset($_POST['awesome_foo_html']);
+		remove_all_filters('get_post_metadata');
 		parent::tearDown();
 	}
 
@@ -81,9 +82,13 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 		$postdata['post_content'] = "New post data";
 		wp_update_post($postdata);
 		unset($_POST['awesome_foo_html']);
-
+		
+		// funky set up for testing the overriding of meta that happens during a 
+		// preview
+		$_GET['version_id'] = $version->post->ID;	
 		query_posts(array('pageid' => $page_id, 'preview' => true));
-
+		BU_Version_Workflow::$controller->override_meta();
+		
 		$preview_meta = get_post_meta($page_id, $this->meta_key, true);
 
 		$this->assertEquals($new_meta, $preview_meta);
@@ -107,7 +112,6 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 		}
 		
 		$html = trim($_POST['awesome_foo_html']);
-
 		update_post_meta($post_id, $this->meta_key, $html);		
 	}
 }
