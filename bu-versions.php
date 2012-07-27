@@ -740,8 +740,9 @@ class BU_Version {
 	 * @access public
 	 * @return void
 	 */
-	function create($post, $alt_post_type, $meta_keys = null) {
-		$this->original = $post;
+	function create($post_id, $alt_post_type, $meta_keys = null) {
+		
+		$this->original = get_post($post_id);
 		$new_version['post_type'] = $alt_post_type;
 		$new_version['post_parent'] = $this->original->ID;
 		$new_version['ID'] = null;
