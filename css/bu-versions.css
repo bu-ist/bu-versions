@@ -2,11 +2,11 @@
 Many of the styles for bu-versions are in place to adjust the post editor for the alternate versions
 */
 
-.js div.notice {
+.js div.bu-version-notice {
 	display: none;
 }
 
-div.notice {
+div.bu-version-notice {
 	background-color: #eff4f8;
 	border-color: #0881d7;
 }

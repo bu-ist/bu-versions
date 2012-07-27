@@ -158,20 +158,20 @@ class BU_Version_Admin {
 						$label = $original->labels->singular_name;
 						$label[0] = strtolower($label[0]);
 					}
-					printf('<div class="updated notice"><p>This is a clone of an existing %s and will replace the <a href="%s" target="_blank">original %s</a> when published.</p></div>', $label, $version->get_original_edit_url(), $label);
+					printf('<div class="updated bu-version-notice"><p>This is a clone of an existing %s and will replace the <a href="%s" target="_blank">original %s</a> when published.</p></div>', $label, $version->get_original_edit_url(), $label);
 				} else {
 					$manager = $this->v_factory->get_alt_manager($post->post_type);
 					if(isset($manager)) {
 						$versions = $manager->get_versions($post_ID);
 						if(is_array($versions) && !empty($versions)) {
-							printf('<div class="updated notice"><p>There is an alternate version for this page. <a href="%s" target="_blank">Edit</a></p></div>', $versions[0]->get_edit_url());
+							printf('<div class="updated bu-version-notice"><p>There is an alternate version for this page. <a href="%s" target="_blank">Edit</a></p></div>', $versions[0]->get_edit_url());
 						}
 
 						// post overwritten with alternate version
 
 						$overwritten_post_id = get_option('_bu_version_post_overwritten');
 						if(!empty($overwritten_post_id) && $post->ID == $overwritten_post_id) {
-							printf('<div class="updated notice"><p>The alternate version has replace the data of this post and been deleted.</p></div>');
+							printf('<div class="updated bu-version-notice"><p>The alternate version has replace the data of this post and been deleted.</p></div>');
 							delete_option('_bu_version_post_overwritten');
 						}
 					}
