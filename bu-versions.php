@@ -62,14 +62,9 @@ class BU_Version_Workflow {
 		add_filter('get_edit_post_link', array(self::$controller, 'override_edit_post_link'), 10, 3);
 
 		if(is_admin()) {
-			self::$admin = new BU_Version_Admin_UI(self::$v_factory);
-			add_filter('parent_file', array(self::$admin, 'parent_file'));
-			add_action('admin_menu', array(self::$admin, 'admin_menu'));
-			add_action('admin_notices', array(self::$admin, 'admin_notices'));
-			add_filter('admin_body_class', array(self::$admin, 'admin_body_class'));
-			add_action('admin_enqueue_scripts', array(self::$admin, 'enqueue'), 10, 1);
+			self::$admin = new BU_Version_Admin(self::$v_factory);
+			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array(self::$controller, 'load_create_version'));
-
 		}
 
 	}
@@ -79,12 +74,22 @@ class BU_Version_Workflow {
 add_action('init', array('BU_Version_Workflow', 'init'), 999);
 
 
-class BU_Version_Admin_UI {
+class BU_Version_Admin {
 
 	public $v_factory;
 
 	function __construct($v_factory) {
 		$this->v_factory = $v_factory;
+	}
+
+	function bind_hooks() {
+		add_filter('parent_file', array($this, 'parent_file'));
+		add_action('admin_menu', array($this, 'admin_menu'));
+		add_action('admin_notices', array($this, 'admin_notices'));
+		add_filter('admin_body_class', array($this, 'admin_body_class'));
+		add_action('admin_enqueue_scripts', array($this, 'enqueue'), 10, 1);
+		add_action('add_meta_boxes', array($this, 'add_meta_boxes'), 10, 2);
+		add_action('save_post', array($this, 'save_page_template'), 10, 2);
 	}
 
 	function enqueue() {
@@ -94,9 +99,9 @@ class BU_Version_Admin_UI {
 
 	function admin_menu() {
 		$v_type_managers = $this->v_factory->managers();
-		foreach($v_type_managers as $type => $manager) {
+		foreach( $v_type_managers as $type => $manager ) {
 			$original_post_type = $manager->get_orig_post_type();
-			if($original_post_type === 'post') {
+			if( $original_post_type === 'post' ) {
 				add_submenu_page( 'edit.php', null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
 			} else {
 				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
@@ -198,6 +203,40 @@ class BU_Version_Admin_UI {
 			}
 		}
 		return $file;
+	}
+
+
+	function add_meta_boxes($post_type, $post) {
+		if( $this->v_factory->is_alt( $post_type ) ) {
+			$manager = $this->v_factory->get( $post_type );
+			$original_post_type = $manager->get_orig_post_type();
+
+			if( $original_post_type == 'page' &&  0 != count( get_page_templates() ) ) {
+				add_meta_box('bu-page-template', 'Page Attributes', array($this,'page_template_meta_box'), $post_type, 'side', 'core');
+			}
+		}
+	}
+
+	function save_page_template($post_id, $post) {
+		
+		if( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
+		
+		$manager = $this->v_factory->get($post->post_type);
+
+		if( ! $manager || $manager->get_orig_post_type() != 'page' ) return; 	
+		
+		$page_template = strip_tags( trim( $_POST['bu_page_template'] ) );
+		$page_templates = get_page_templates();
+		
+		if ( 'default' == $page_template || in_array($page_template, $page_templates) ) {
+			update_post_meta($post_id, '_wp_page_template',  $page_template);
+		}
+	}
+
+	function page_template_meta_box($post, $box) {
+		$page_template = get_post_meta($post->ID, '_wp_page_template', true);
+		
+		include dirname( __FILE__ ) . '/interface/page-template.php';
 	}
 }
 
@@ -302,6 +341,11 @@ class BU_VPost_Factory {
 				if( isset( $alt_supported_features[ $feature ] ) ) {
 					$meta_keys = array_merge( $meta_keys, $alt_supported_features[ $feature ] );
 				}
+			}
+			
+			// special case to copy the page template
+			if( $type->name == 'page' ) {
+				$meta_keys[] = '_wp_page_template';
 			}	
 			
 			$v_post_type = $type->name . '_alt';
@@ -373,19 +417,23 @@ class BU_Version_Manager {
 		$this->meta_keys = $meta_keys;
 
 		if(is_admin()) {
-			$this->admin = new BU_Version_Manager_Admin($this->post_type);
+			if( $this->orig_post_type == 'page' ) {
+				$this->admin = new BU_Version_Alt_Page_Manager_Admin( $this->post_type );
+			} else {
+				$this->admin = new BU_Version_Manager_Admin( $this->post_type );
+			}
 		}
 
 	}
 
 	function create($post_id) {
 		$post = get_post($post_id);
-		if(!$post) {
+		if( ! $post ) {
 			$error = new WP_Error('original_not_found', 'The post to clone could not be found');
 			return $error;
 		}
 		$version = new BU_Version();
-		$version->create($post, $this->post_type, $this->meta_keys);
+		$version->create( $post, $this->post_type, $this->meta_keys );
 		return $version;
 	}
 
@@ -393,7 +441,7 @@ class BU_Version_Manager {
 			$version = new BU_Version();
 			$version->get($post_id);
 
-			$result =  $version->publish($this->meta_keys);
+			$result =  $version->publish( $this->meta_keys );
 			if( $result ) {
 				return $version;
 			} else {
@@ -407,8 +455,8 @@ class BU_Version_Manager {
 	
 
 	function override_meta($val, $object_id, $key, $single) {
-		if(in_array($key, $this->meta_keys) && isset($_GET['version_id'])) {
-			$version_id = (int) trim($_GET['version_id']);
+		if( in_array( $key, $this->meta_keys ) && isset( $_GET['version_id'] )  ) {
+			$version_id = (int) trim( $_GET['version_id'] );
 			$version = new BU_Version();
 			$version->get($version_id);
 			remove_filter('get_post_metadata', array($this, 'override_meta'), 10, 4);
@@ -503,6 +551,12 @@ class BU_Version_Manager_Admin {
 			}
 		}
 	}
+}
+
+class BU_Version_Alt_Page_Manager_Admin extends BU_Version_Manager_Admin {
+
+
+
 
 }
 
@@ -652,7 +706,7 @@ class BU_Version_Controller {
 	function override_edit_post_link($url, $post_id, $context) {
 
 		$version_id = get_query_var('version_id');
-		if(!empty($version_id) && $post_id != $version_id) {
+		if(! empty( $version_id ) && $post_id != $version_id) {
 			$version = new BU_Version;
 			$version->get($version_id);
 			$url = $version->get_edit_url();
@@ -713,10 +767,12 @@ class BU_Version {
 	private function copy_original_meta($meta_keys) {
 		foreach( $meta_keys as $key ) {
 			$values = get_post_meta( $this->original->ID, $key );
+			
 			foreach( $values as $v ) {
 				update_post_meta( $this->post->ID, $key, $v );
 			}
 		}
+		update_post_meta( $this->post->ID, '_bu_version_copied_keys', $meta_keys);
 	}
 
 	function publish($meta_keys = null) {
@@ -739,13 +795,15 @@ class BU_Version {
 	}
 
 	private function overwrite_original_meta($meta_keys) {
+		$copied_keys = get_post_meta( $this->post->ID, '_bu_version_copied_keys', true );
 		foreach( $meta_keys as $key ) {
+			// we only delete keys that we are sure were copied
+			if( is_array( $copied_keys ) && in_array( $key, $copied_keys ) ) {
+				delete_post_meta( $this->original->ID, $key );
+			}
 			$values = get_post_meta( $this->post->ID, $key );
-			// delete then add because we don't know how the new values 
-			// correspond to the original values for a given key
-			delete_post_meta( $this->original->ID, $key );
 			foreach( $values as $v ) {	
-				add_post_meta( $this->original->ID, $key, $v );
+				update_post_meta( $this->original->ID, $key, $v );
 			}
 		}
 	}
