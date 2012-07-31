@@ -417,11 +417,7 @@ class BU_Version_Manager {
 		$this->meta_keys = $meta_keys;
 
 		if(is_admin()) {
-			if( $this->orig_post_type == 'page' ) {
-				$this->admin = new BU_Version_Alt_Page_Manager_Admin( $this->post_type );
-			} else {
-				$this->admin = new BU_Version_Manager_Admin( $this->post_type );
-			}
+			$this->admin = new BU_Version_Manager_Admin( $this->post_type );
 		}
 
 	}
@@ -552,14 +548,6 @@ class BU_Version_Manager_Admin {
 		}
 	}
 }
-
-class BU_Version_Alt_Page_Manager_Admin extends BU_Version_Manager_Admin {
-
-
-
-
-}
-
 
 class BU_Version_Controller {
 	public $v_factory;
