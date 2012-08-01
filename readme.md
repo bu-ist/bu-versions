@@ -39,3 +39,11 @@ function foo_register_alt_version_features($features) {
 add_filter('bu_alt_versions_feature_support', 'foo_register_alt_version_features');
 
 ```
+
+Changlog
+
+0.5
+* Replaced the "Edit <post_type>" admin bar menu with a "Edit" dropdown.
+
+0.4
+* Added support for the cloning / overwriting of meta data.
