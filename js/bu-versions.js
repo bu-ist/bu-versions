@@ -7,8 +7,4 @@ jQuery(function($) {
 	if($button.val() == 'Publish') {
 		$button.val('Replace Original');
 	}
-
 });
-
-
-
