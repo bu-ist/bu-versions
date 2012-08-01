@@ -3,7 +3,7 @@
 /*
  Plugin Name: BU Versions
  Description: Make and review edits to published content.
- Version: 0.4
+ Version: 0.5
  Author: Boston University (IS&T)
 */
 
@@ -708,25 +708,36 @@ class BU_Version_Controller {
 		
 		if(is_singular() && is_object( $wp_admin_bar ) ) {
 			
+			$wp_admin_bar->remove_menu('edit');
+			
 			$current_object = get_queried_object();
+			if( ! isset( $current_object ) ) return;
+			$current_post_type = get_post_type_object( $current_object->post_type );
 			$version = new BU_Version();
 			if( $this->is_alt( $current_object->ID ) ) {
-				$version->get($current_object->ID);
+				$version->get( $current_object->ID );
 			} else {
-				$version->get_version($current_object->ID);	
-			}	
+				$version->get_version( $current_object->ID );	
+			}
 			
 			if( $version->has_version() ) {
-
-					$wp_admin_bar->remove_menu('edit');
+				if( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label' ), 'href' => get_edit_post_link( $current_object->ID ) ) );
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => 'Edit Original', 'href' => $version->get_original_edit_url() ) );
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => admin_url($link) ) );
-				
+					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
+				} else {
+					$alternate_post_type = get_post_type_object( $version->post->post_type );
+					if( current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) { 
+						$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
+					}
+				}
+			} else {
+				if ( ! empty( $current_object->post_type ) && ( $post_type_object = get_post_type_object( $current_object->post_type ) ) && current_user_can( $post_type_object->cap->edit_post, $current_object->id ) && $post_type_object->show_ui ) {
+					$wp_admin_bar->add_menu( array( 'id' => 'edit', 'title' => _x( 'Edit', 'admin bar menu group label' ),  'href' => get_edit_post_link( $current_object->id ) ) );
+				}
+
 			}
-
 		}
-
 	}
 
 	function is_alt( $post_type ) {
@@ -858,6 +869,8 @@ class BU_Version {
 	function has_version() {
 		return isset( $this->post );
 	}
+	
+
 
 	function get_original_edit_url($context = null) {
 		return get_edit_post_link($this->original->ID, $context);
