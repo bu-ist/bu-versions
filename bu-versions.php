@@ -53,8 +53,10 @@ class BU_Version_Workflow {
 
 		if(version_compare($GLOBALS['wp_version'], '3.3.2', '>=')) {
 			add_action('before_delete_post', array(self::$controller, 'delete_post_handler'));
+			add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 81 ); // since we are replaying the menu the priority needs to vary
 		} else {
 			add_action('delete_post', array(self::$controller, 'delete_post_handler'));
+			add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 31 );
 		}
 
 		add_action('map_meta_cap', array(self::$controller, 'map_meta_cap'), 20, 4);
@@ -67,8 +69,7 @@ class BU_Version_Workflow {
 			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
 		}
-		
-		add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 31 );
+			
 	}
 
 }
