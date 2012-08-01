@@ -26,6 +26,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 **/
 
+/**
+ * @todo split into multiple files
+ * @todo verify presence of alternate version when loading original to fix orphans.
+ **/ 
 
 class BU_Version_Workflow {
 
@@ -40,9 +44,6 @@ class BU_Version_Workflow {
 
 
 		self::$controller = new BU_Version_Controller(self::$v_factory);
-		// forgo the meta boxes for now...
-		//add_action('do_meta_boxes', array('BU_Version_Workflow', 'register_meta_boxes'), 10, 3);
-
 
 		add_action('transition_post_status', array(self::$controller, 'publish_version'), 10, 3);
 		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
@@ -62,11 +63,12 @@ class BU_Version_Workflow {
 		add_filter('get_edit_post_link', array(self::$controller, 'override_edit_post_link'), 10, 3);
 
 		if(is_admin()) {
-			self::$admin = new BU_Version_Admin(self::$v_factory);
+			self::$admin = new BU_Version_Admin( self::$v_factory );
 			self::$admin->bind_hooks();
-			add_action('load-admin_page_bu_create_version', array(self::$controller, 'load_create_version'));
+			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
 		}
-
+		
+		add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 31 );
 	}
 
 }
@@ -676,9 +678,8 @@ class BU_Version_Controller {
 
 	function delete_post_handler($post_id) {
 		$post = get_post($post_id);
-		$alt_types = $this->v_factory->get_alt_types();
 
-		if(is_array($alt_types) && in_array($post->post_type, $alt_types)) {
+		if( $this->is_alt( $post->post_type ) ) {
 			$version = new BU_Version();
 			$version->get($post_id);
 			$version->delete_parent_meta();
@@ -702,18 +703,62 @@ class BU_Version_Controller {
 		return $url;
 	}
 
+	function admin_bar_menu() {
+		global $wp_admin_bar;
+		
+		if(is_singular() && is_object( $wp_admin_bar ) ) {
+			
+			$current_object = get_queried_object();
+			$version = new BU_Version();
+			if( $this->is_alt( $current_object->ID ) ) {
+				$version->get($current_object->ID);
+			} else {
+				$version->get_version($current_object->ID);	
+			}	
+			
+			if( $version->has_version() ) {
+
+					$wp_admin_bar->remove_menu('edit');
+					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label' ), 'href' => get_edit_post_link( $current_object->ID ) ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => 'Edit Original', 'href' => $version->get_original_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => admin_url($link) ) );
+				
+			}
+
+		}
+
+	}
+
+	function is_alt( $post_type ) {
+		return $this->v_factory->is_alt( $post_type );
+	}
+
 	static function create_version_view() {
 		   // no-op
 	}
-
-
-
 }
 
 class BU_Version {
 
-	public $original;
-	public $post;
+	public $original = null;
+	public $post = null;
+
+	function get_version($post_id) {
+		if( ! isset( $this->original ) ) {
+			$original = get_post( $post_id );
+			if( $original ) {
+				$this->original = $original;
+				$version_id = get_post_meta( $this->original->ID, '_bu_version', true );
+				if( ! empty( $version_id ) ) {
+					$version = get_post( $version_id );
+					if( $version ) {
+						$this->post = $version;
+					}
+				}
+			}
+		}
+		return $this->post;
+	}
 
 	function get($version_id) {
 		$this->post = get_post($version_id);
@@ -808,6 +853,10 @@ class BU_Version {
 
 	function get_id() {
 		return $this->post->ID;
+	}
+
+	function has_version() {
+		return isset( $this->post );
 	}
 
 	function get_original_edit_url($context = null) {
