@@ -425,15 +425,17 @@ class BU_Version_Manager {
 
 	}
 
-	function create($post_id) {
-		$post = get_post($post_id);
-		if( ! $post ) {
-			$error = new WP_Error('original_not_found', 'The post to clone could not be found');
-			return $error;
-		}
+	function create( $post_id ) {
+		
 		$version = new BU_Version();
-		$version->create( $post, $this->post_type, $this->meta_keys );
-		return $version;
+		
+		$result = $version->create( $post_id, $this->post_type, $this->meta_keys );
+		
+		if( is_wp_error( $result ) ) {
+			return $result;
+		} else {
+			return $version;
+		}
 	}
 
 	function publish($post_id) {
@@ -659,19 +661,19 @@ class BU_Version_Controller {
 			$post_id = (int) $_GET['post'];
 
 			$post = get_post($post_id);
-			if(!$post) {
+			if( ! $post ) {
 				wp_die("The post to be cloned could not be found.");
 			}
 
 			$v_manager = $this->v_factory->get_alt_manager($post->post_type);
 
-			$version = $v_manager->create($post_id);
-			if( ! is_wp_error($version)) {
-				$redirect_url = add_query_arg(array('post' => $version->get_id(), 'action' => 'edit'), 'post.php');
+			$result = $v_manager->create( $post_id );
+			if( ! is_wp_error( $result ) ) {
+				$redirect_url = add_query_arg(array('post' => $result->get_id(), 'action' => 'edit'), 'post.php');
 				wp_redirect($redirect_url);
 				exit();
 			} else {
-				wp_die("The alternate version could not be created.");
+				wp_die("The alternate version could not be created. " . $result->get_error_message() );
 			}
 		}
 	}
@@ -776,9 +778,13 @@ class BU_Version {
 			$original = get_post( $post_id );
 			if( $original ) {
 				$this->original = $original;
+				
 				$version_id = get_post_meta( $this->original->ID, '_bu_version', true );
+				
 				if( ! empty( $version_id ) ) {
+					
 					$version = get_post( $version_id );
+					
 					if( $version ) {
 						$this->post = $version;
 					}
@@ -799,11 +805,14 @@ class BU_Version {
 	 * @param mixed $post 
 	 * @param mixed $alt_post_type 
 	 * @access public
-	 * @return void
+	 * @return int|WP_Error
 	 */
 	function create($post_id, $alt_post_type, $meta_keys = null) {
-		
-		$this->original = get_post($post_id);
+		$this->get_version( $post_id );	
+		if( $this->has_version() ) {
+			return new WP_Error( 'alternate_already_exists', 'An alternate version already exists for this post.' );
+		}
+
 		$new_version['post_type'] = $alt_post_type;
 		$new_version['post_parent'] = $this->original->ID;
 		$new_version['ID'] = null;
@@ -812,13 +821,15 @@ class BU_Version {
 		$new_version['post_name'] = $this->original->post_name;
 		$new_version['post_title'] = $this->original->post_title;
 		$new_version['post_excerpt'] = $this->original->post_excerpt;
+		
 		$result = wp_insert_post($new_version);
-		if(!is_wp_error($result)) {
+		
+		if( ! is_wp_error($result) ) {
 			$this->post = get_post($result);
 			$this->copy_original_meta($meta_keys);
 			update_post_meta($this->original->ID, '_bu_version', $this->post->ID);
-
 		}
+
 		return $result;
 
 	}
@@ -853,7 +864,6 @@ class BU_Version {
 			$this->delete_version();
 		}
 		return $result;
-
 	}
 
 	private function overwrite_original_meta($meta_keys) {
