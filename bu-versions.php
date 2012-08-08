@@ -629,8 +629,10 @@ class BU_Version_Controller {
 			$version = new BU_version();
 			$version->get($version_id);
 			$url = $version->get_preview_URL();
-			wp_redirect($url, 302);
-			exit();
+			if( isset( $url ) && $url != $_SERVER['REQUEST_URI'] ) {
+				wp_redirect($url, 302);
+				exit();
+			}
 		}
 	}
 
@@ -906,7 +908,7 @@ class BU_Version {
 	}
 
 	function get_preview_URL() {
-		if(!isset($this->original) || !isset($this->post)) return null;
+		if( ! isset( $this->original ) || ! isset( $this->post ) || $this->post->ID == $this->original->ID ) return null;
 
 		$permalink = get_permalink($this->original);
 		$url = add_query_arg(array('version_id' => $this->post->ID, 'preview'=> 'true'), $permalink);
