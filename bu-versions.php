@@ -814,7 +814,12 @@ class BU_Version {
 		if( $this->has_version() ) {
 			return new WP_Error( 'alternate_already_exists', 'An alternate version already exists for this post.' );
 		}
-
+		
+		$this->original = get_post( $post_id );
+		if( ! isset( $this->original ) ) {
+			return new WP_Error( 'alternate_no_original', 'The post ID: ' . $post_id . ' could not be found.' ); 
+		}
+		
 		$new_version['post_type'] = $alt_post_type;
 		$new_version['post_parent'] = $this->original->ID;
 		$new_version['ID'] = null;
