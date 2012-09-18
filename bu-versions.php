@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /**
  * @todo split into multiple files
  * @todo verify presence of alternate version when loading original to fix orphans.
- **/ 
+ **/
 
 class BU_Version_Workflow {
 
@@ -47,7 +47,7 @@ class BU_Version_Workflow {
 
 		add_action('transition_post_status', array(self::$controller, 'publish_version'), 10, 3);
 		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
-		
+
 		add_action('template_redirect', array(self::$controller, 'redirect_preview'));
 		add_action('template_redirect', array(self::$controller, 'override_meta'), 1);
 
@@ -69,7 +69,7 @@ class BU_Version_Workflow {
 			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
 		}
-			
+
 	}
 
 }
@@ -221,16 +221,16 @@ class BU_Version_Admin {
 	}
 
 	function save_page_template($post_id, $post) {
-		
+
 		if( defined('DOING_AUTOSAVE') && DOING_AUTOSAVE ) return;
-		
+
 		$manager = $this->v_factory->get($post->post_type);
 
-		if( ! $manager || $manager->get_orig_post_type() != 'page' ) return; 	
-		
+		if( ! $manager || $manager->get_orig_post_type() != 'page' ) return;
+
 		$page_template = strip_tags( trim( $_POST['bu_page_template'] ) );
 		$page_templates = get_page_templates();
-		
+
 		if ( 'default' == $page_template || in_array($page_template, $page_templates) ) {
 			update_post_meta($post_id, '_wp_page_template',  $page_template);
 		}
@@ -238,7 +238,7 @@ class BU_Version_Admin {
 
 	function page_template_meta_box($post, $box) {
 		$page_template = get_post_meta($post->ID, '_wp_page_template', true);
-		
+
 		include dirname( __FILE__ ) . '/interface/page-template.php';
 	}
 }
@@ -296,12 +296,12 @@ class BU_VPost_Factory {
 		);
 
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
-		
-		
+
+
 		$alt_supported_features = array(
 			'thumbnail' => array('_thumbnail_id'),
 			'bu-content-banner' => array('_bu_banner'),
-			'bu-post-details' => array( 
+			'bu-post-details' => array(
 				'_bu_thumbnail',
 				'_bu_page_description',
 				'_bu_meta_description',
@@ -312,11 +312,11 @@ class BU_VPost_Factory {
 			),
 			'bu-disable-autop' => array('_bu_disable_autop')
 		);
-		
-		// plugins/themes can add support for particular features by filtering 
+
+		// plugins/themes can add support for particular features by filtering
 		// the array of supported features
 		$alt_supported_features = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
-		
+
 		foreach($post_types as $type) {
 
 			// allow plugins/themes to control whether a post type supports alternate versions
@@ -324,33 +324,33 @@ class BU_VPost_Factory {
 			if(false === apply_filters('bu_alt_versions_for_type', true, $type)) {
 				continue;
 			}
-			
+
 			$args = $default_args;
 
 			$args['capability_type'] = $type->capability_type;
-			
+
 			foreach(array_keys($alt_supported_features) as $feature) {
 				if( post_type_supports($type->name, $feature) ) {
 					$args['supports'][] = $feature;
 				}
 			}
-			
-			
+
+
 			$args = apply_filters('bu_alt_version_args', $args, $type);
 
 			$meta_keys = array();
-			
+
 			foreach( $args['supports'] as $feature ) {
 				if( isset( $alt_supported_features[ $feature ] ) ) {
 					$meta_keys = array_merge( $meta_keys, $alt_supported_features[ $feature ] );
 				}
 			}
-			
+
 			// special case to copy the page template
 			if( $type->name == 'page' ) {
 				$meta_keys[] = '_wp_page_template';
-			}	
-			
+			}
+
 			$v_post_type = $type->name . '_alt';
 
 			$register = register_post_type($v_post_type, $args);
@@ -403,7 +403,7 @@ class BU_Version_Manager {
 	public $post_type = null;
 
 	public $meta_keys;
-	
+
 	/**
 	 * Post type of the originals
 	 *
@@ -414,7 +414,7 @@ class BU_Version_Manager {
 	public $admin = null;
 
 	function __construct($orig_post_type, $post_type, $args, $meta_keys) {
-		
+
 		$this->post_type = $post_type;
 		$this->orig_post_type = $orig_post_type;
 		$this->meta_keys = $meta_keys;
@@ -426,11 +426,11 @@ class BU_Version_Manager {
 	}
 
 	function create( $post_id ) {
-		
+
 		$version = new BU_Version();
-		
+
 		$result = $version->create( $post_id, $this->post_type, $this->meta_keys );
-		
+
 		if( is_wp_error( $result ) ) {
 			return $result;
 		} else {
@@ -453,7 +453,7 @@ class BU_Version_Manager {
 	function get_orig_post_type() {
 		return $this->orig_post_type;
 	}
-	
+
 
 	function override_meta($val, $object_id, $key, $single) {
 		if( in_array( $key, $this->meta_keys ) && isset( $_GET['version_id'] )  ) {
@@ -498,7 +498,7 @@ class BU_Version_Manager {
 
 	function delete_versions($orig_post_id) {
 		$versions = $this->get_versions($orig_post_id);
-		if( ! isset( $versions ) ) return;	
+		if( ! isset( $versions ) ) return;
 		foreach($versions as $version) {
 			$version->delete_version();
 		}
@@ -588,7 +588,7 @@ class BU_Version_Controller {
 		if($new_status === 'publish' && $old_status !== 'publish' && $this->v_factory->is_alt($post->post_type)) {
 
 			$manager = $this->v_factory->get($post->post_type);
-			$version = $manager->publish( $post->ID );	
+			$version = $manager->publish( $post->ID );
 			if( $version ) {
 				wp_redirect($version->get_original_edit_url());
 				exit;
@@ -597,7 +597,7 @@ class BU_Version_Controller {
 			}
 		}
 	}
-	
+
 	/**
 	 * Add filters to override post meta data
 	 **/
@@ -609,12 +609,12 @@ class BU_Version_Controller {
 			$version->get($version_id);
 			if(isset($version->post->post_type)) {
 				$manager = $this->v_factory->get($version->post->post_type);
-				add_filter('get_post_metadata', array($manager, 'override_meta'), 10, 4); 
+				add_filter('get_post_metadata', array($manager, 'override_meta'), 10, 4);
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * Redirect page_version previews to the orginal page, but with a specific
 	 * parameter included that triggers the content to be replaced with the data
@@ -710,7 +710,7 @@ class BU_Version_Controller {
 
 	function admin_bar_menu() {
 		global $wp_admin_bar;
-		
+
 		if(is_singular() && is_object( $wp_admin_bar ) ) {
 			if( is_preview() && isset( $_GET['version_id'] ) ) {
 				$post_id = (int) $_GET['version_id'];
@@ -718,42 +718,42 @@ class BU_Version_Controller {
 			} else {
 				$current_object = get_queried_object();
 			}
-			
+
 			$current_post_type = get_post_type_object( $current_object->post_type );
-			
+
 			if( ! isset( $current_object ) ) return;
-			
+
 			$version = new BU_Version();
 			if( $this->is_alt( $current_object->post_type ) ) {
 				$version->get( $current_object->ID );
 			} else {
-				$version->get_version( $current_object->ID );	
+				$version->get_version( $current_object->ID );
 			}
-			
+
 			$original_post_type = get_post_type_object( $version->original->post_type );
-			
+
 			if( $version->has_version() ) {
 				$alternate_post_type = get_post_type_object( $version->post->post_type );
-			}	
+			}
 
-			
+
 			$wp_admin_bar->remove_menu('edit');
-			
+
 			// in this case we don't want to override the edit links
 			remove_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
-			
+
 			if( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
 				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label' ), 'href' => get_edit_post_link( $current_object->ID ) ) );
-				
+
 				if( current_user_can( $original_post_type->cap->edit_post, $version->original->ID ) ) {
 
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => 'Edit Original', 'href' => $version->get_original_edit_url() ) );
-					
+
 					if( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
-					}	
+					}
 				}
-				
+
 			} elseif ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
 			}
@@ -780,13 +780,13 @@ class BU_Version {
 			$original = get_post( $post_id );
 			if( $original ) {
 				$this->original = $original;
-				
+
 				$version_id = get_post_meta( $this->original->ID, '_bu_version', true );
-				
+
 				if( ! empty( $version_id ) ) {
-					
+
 					$version = get_post( $version_id );
-					
+
 					if( $version ) {
 						$this->post = $version;
 					}
@@ -802,24 +802,24 @@ class BU_Version {
 	}
 
 	/**
-	 * create 
-	 * 
-	 * @param mixed $post 
-	 * @param mixed $alt_post_type 
+	 * create
+	 *
+	 * @param mixed $post
+	 * @param mixed $alt_post_type
 	 * @access public
 	 * @return int|WP_Error
 	 */
 	function create($post_id, $alt_post_type, $meta_keys = null) {
-		$this->get_version( $post_id );	
+		$this->get_version( $post_id );
 		if( $this->has_version() ) {
 			return new WP_Error( 'alternate_already_exists', 'An alternate version already exists for this post.' );
 		}
-		
+
 		$this->original = get_post( $post_id );
 		if( ! isset( $this->original ) ) {
-			return new WP_Error( 'alternate_no_original', 'The post ID: ' . $post_id . ' could not be found.' ); 
+			return new WP_Error( 'alternate_no_original', 'The post ID: ' . $post_id . ' could not be found.' );
 		}
-		
+
 		$new_version['post_type'] = $alt_post_type;
 		$new_version['post_parent'] = $this->original->ID;
 		$new_version['ID'] = null;
@@ -828,9 +828,9 @@ class BU_Version {
 		$new_version['post_name'] = $this->original->post_name;
 		$new_version['post_title'] = $this->original->post_title;
 		$new_version['post_excerpt'] = $this->original->post_excerpt;
-		
+
 		$result = wp_insert_post($new_version);
-		
+
 		if( ! is_wp_error($result) ) {
 			$this->post = get_post($result);
 			$this->copy_original_meta($meta_keys);
@@ -840,14 +840,14 @@ class BU_Version {
 		return $result;
 
 	}
-	
+
 	/**
 	 * Because of sanization and serialization, it may be better to use SQL, but for now we are using the API
-	 **/ 
+	 **/
 	private function copy_original_meta($meta_keys) {
 		foreach( $meta_keys as $key ) {
 			$values = get_post_meta( $this->original->ID, $key );
-			
+
 			foreach( $values as $v ) {
 				update_post_meta( $this->post->ID, $key, $v );
 			}
@@ -881,7 +881,7 @@ class BU_Version {
 				delete_post_meta( $this->original->ID, $key );
 			}
 			$values = get_post_meta( $this->post->ID, $key );
-			foreach( $values as $v ) {	
+			foreach( $values as $v ) {
 				update_post_meta( $this->original->ID, $key, $v );
 			}
 		}
@@ -903,7 +903,7 @@ class BU_Version {
 	function has_version() {
 		return isset( $this->post );
 	}
-	
+
 	function get_original_edit_url($context = null) {
 		return get_edit_post_link($this->original->ID, $context);
 	}
