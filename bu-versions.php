@@ -776,19 +776,25 @@ class BU_Version {
 	public $post = null;
 	const tracking_meta_key = '_bu_version';
 
-	function get_version($post_id) {
-		if( ! isset( $this->original ) ) {
+	/**
+	 * Get the alternate version for a particular post_id or the alternate
+	 * version if it has already been retrieved.
+	 *
+	 * @param $post_id
+	 **/
+	function get_version( $post_id = null ) {
+		if ( ! isset( $this->original ) || $this->original->ID != $post_id ) {
 			$original = get_post( $post_id );
-			if( $original ) {
+			if ( $original ) {
 				$this->original = $original;
 
 				$version_id = get_post_meta( $this->original->ID, self::tracking_meta_key, true );
 
-				if( ! empty( $version_id ) ) {
+				if ( ! empty( $version_id ) ) {
 
 					$version = get_post( $version_id );
 
-					if( $version ) {
+					if ( $version ) {
 						$this->post = $version;
 					}
 				}
@@ -797,27 +803,33 @@ class BU_Version {
 		return $this->post;
 	}
 
-	function get($version_id) {
-		$this->post = get_post($version_id);
-		$this->original = get_post($this->post->post_parent);
+	/**
+	 * Load the alternate version and the post that the alternate version is
+	 * based upon.
+	 *
+	 * @param $version_id
+	 **/
+	function get( $version_id ) {
+		$this->post = get_post( $version_id );
+		$this->original = get_post( $this->post->post_parent );
 	}
 
 	/**
-	 * create
+	 * Create a new alternate version.
 	 *
 	 * @param mixed $post
 	 * @param mixed $alt_post_type
 	 * @access public
 	 * @return int|WP_Error
 	 */
-	function create($post_id, $alt_post_type, $meta_keys = null) {
+	function create( $post_id, $alt_post_type, $meta_keys = null ) {
 		$this->get_version( $post_id );
-		if( $this->has_version() ) {
+		if ( $this->has_version() ) {
 			return new WP_Error( 'alternate_already_exists', 'An alternate version already exists for this post.' );
 		}
 
 		$this->original = get_post( $post_id );
-		if( ! isset( $this->original ) ) {
+		if ( ! isset( $this->original ) ) {
 			return new WP_Error( 'alternate_no_original', 'The post ID: ' . $post_id . ' could not be found.' );
 		}
 
@@ -832,10 +844,10 @@ class BU_Version {
 
 		$result = wp_insert_post($new_version);
 
-		if( ! is_wp_error($result) ) {
-			$this->post = get_post($result);
-			$this->copy_original_meta($meta_keys);
-			update_post_meta($this->original->ID, self::tracking_meta_key, $this->post->ID);
+		if ( ! is_wp_error( $result ) ) {
+			$this->post = get_post( $result );
+			$this->copy_original_meta( $meta_keys );
+			update_post_meta( $this->original->ID, self::tracking_meta_key, $this->post->ID );
 		}
 
 		return $result;
@@ -843,30 +855,35 @@ class BU_Version {
 	}
 
 	/**
+	 * Copy the meta data from the original post.
+	 *
 	 * Because of sanization and serialization, it may be better to use SQL, but for now we are using the API
 	 **/
-	private function copy_original_meta($meta_keys) {
-		foreach( $meta_keys as $key ) {
+	private function copy_original_meta( $meta_keys ) {
+		foreach ( $meta_keys as $key ) {
 			$values = get_post_meta( $this->original->ID, $key );
 
-			foreach( $values as $v ) {
+			foreach ( $values as $v ) {
 				update_post_meta( $this->post->ID, $key, $v );
 			}
 		}
 		update_post_meta( $this->post->ID, '_bu_version_copied_keys', $meta_keys);
 	}
 
-	function publish($meta_keys = null) {
-		if(!isset($this->original) || !isset($this->post)) return false;
+	/**
+	 * Publish the alternate version and overwrite the original.
+	 **/
+	function publish( $meta_keys = null ) {
+		if ( ! isset( $this->original ) || ! isset ( $this->post ) ) return false;
 
 		$post = (array) $this->original;
 		$post['post_title'] = $this->post->post_title;
 		$post['post_content'] = $this->post->post_content;
 		$post['post_excerpt'] = $this->post->post_excerpt;
-		$result = wp_update_post($post);
-		if( ! is_wp_error( $result ) ) {
-			add_option('_bu_version_post_overwritten', $result);
-			if(isset($meta_keys)) {
+		$result = wp_update_post( $post );
+		if ( ! is_wp_error( $result ) ) {
+			add_option( '_bu_version_post_overwritten', $result ); // used for notification
+			if ( isset($meta_keys ) ) {
 				$this->overwrite_original_meta( $meta_keys );
 			}
 			$this->delete_version();
@@ -874,27 +891,32 @@ class BU_Version {
 		return $result;
 	}
 
-	private function overwrite_original_meta($meta_keys) {
+	/**
+	 * Replace the meta data on the original post with the meta data from the
+	 * alternate version.
+	 **/
+	private function overwrite_original_meta( $meta_keys ) {
 		$copied_keys = get_post_meta( $this->post->ID, '_bu_version_copied_keys', true );
-		foreach( $meta_keys as $key ) {
+		foreach ( $meta_keys as $key ) {
 			// we only delete keys that we are sure were copied
-			if( is_array( $copied_keys ) && in_array( $key, $copied_keys ) ) {
+			if ( is_array( $copied_keys ) && in_array( $key, $copied_keys ) ) {
 				delete_post_meta( $this->original->ID, $key );
 			}
 			$values = get_post_meta( $this->post->ID, $key );
-			foreach( $values as $v ) {
+			foreach ( $values as $v ) {
 				update_post_meta( $this->original->ID, $key, $v );
 			}
 		}
 	}
 
+
 	function delete_version() {
-		wp_delete_post($this->post->ID);
+		wp_delete_post( $this->post->ID );
 		$this->delete_parent_meta();
 	}
 
 	function delete_parent_meta() {
-		delete_post_meta($this->original->ID, self::tracking_meta_key);
+		delete_post_meta( $this->original->ID, self::tracking_meta_key );
 	}
 
 	function get_id() {
@@ -905,22 +927,31 @@ class BU_Version {
 		return isset( $this->post );
 	}
 
-	function get_original_edit_url($context = null) {
-		return get_edit_post_link($this->original->ID, $context);
+	/**
+	 * Get the edit URL for the original
+	 **/
+	function get_original_edit_url( $context = null ) {
+		return get_edit_post_link( $this->original->ID, $context );
 	}
 
-	function get_edit_url($context = 'display') {
-		return get_edit_post_link($this->post->ID, $context);
+	/**
+	 * Get the edit URL for the alternate version
+	 **/
+	function get_edit_url( $context = 'display' ) {
+		return get_edit_post_link( $this->post->ID, $context );
 	}
 
+	/**
+	 * Get the preview URL for the alternate version
+	 **/
 	function get_preview_URL() {
-		if( ! isset( $this->original ) || ! isset( $this->post ) || $this->post->ID == $this->original->ID ) return null;
+		if ( ! isset( $this->original ) || ! isset( $this->post ) || $this->post->ID == $this->original->ID ) return null;
 
-		$permalink = get_permalink($this->original);
-		$url = add_query_arg(array('version_id' => $this->post->ID, 'preview'=> 'true'), $permalink);
+		$permalink = get_permalink( $this->original );
+		$url = add_query_arg( array( 'version_id' => $this->post->ID, 'preview'=> 'true' ), $permalink );
 		return $url;
 	}
-}
 
+}
 
 ?>
