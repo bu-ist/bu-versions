@@ -774,6 +774,7 @@ class BU_Version {
 
 	public $original = null;
 	public $post = null;
+	const tracking_meta_key = '_bu_version';
 
 	function get_version($post_id) {
 		if( ! isset( $this->original ) ) {
@@ -781,7 +782,7 @@ class BU_Version {
 			if( $original ) {
 				$this->original = $original;
 
-				$version_id = get_post_meta( $this->original->ID, '_bu_version', true );
+				$version_id = get_post_meta( $this->original->ID, self::tracking_meta_key, true );
 
 				if( ! empty( $version_id ) ) {
 
@@ -834,7 +835,7 @@ class BU_Version {
 		if( ! is_wp_error($result) ) {
 			$this->post = get_post($result);
 			$this->copy_original_meta($meta_keys);
-			update_post_meta($this->original->ID, '_bu_version', $this->post->ID);
+			update_post_meta($this->original->ID, self::tracking_meta_key, $this->post->ID);
 		}
 
 		return $result;
@@ -893,7 +894,7 @@ class BU_Version {
 	}
 
 	function delete_parent_meta() {
-		delete_post_meta($this->original->ID, '_bu_version');
+		delete_post_meta($this->original->ID, self::tracking_meta_key);
 	}
 
 	function get_id() {
