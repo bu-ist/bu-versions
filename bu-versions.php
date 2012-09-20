@@ -742,21 +742,21 @@ class BU_Version_Controller {
 			// in this case we don't want to override the edit links
 			remove_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
 
-			if( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
+			if ( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
 				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label' ), 'href' => get_edit_post_link( $current_object->ID ) ) );
 
-				if( current_user_can( $original_post_type->cap->edit_post, $version->original->ID ) ) {
-
+				if ( $version->original->ID != $current_object->ID && current_user_can( 'edit_post', $version->original->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => 'Edit Original', 'href' => $version->get_original_edit_url() ) );
+				}
 
-					if( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
+				if ( $version->post->ID != $current_object->ID && $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
-					}
 				}
 
 			} elseif ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
 			}
+
 			add_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
 		}
 	}
