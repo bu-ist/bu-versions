@@ -96,8 +96,10 @@ class BU_Version_Admin {
 	}
 
 	function enqueue() {
-		wp_enqueue_script('bu-versions', plugins_url('/js/bu-versions.js', __FILE__));
-		wp_enqueue_style('bu-versions', plugins_url('/css/bu-versions.css', __FILE__));
+		// I am not using __FILE__ symlinks are converted to their physical path
+		// which is sometimes problematic
+		wp_enqueue_script('bu-versions', plugins_url('/js/bu-versions.js', 'bu-versions/bu-versions.php'));
+		wp_enqueue_style('bu-versions', plugins_url('/css/bu-versions.css', 'bu-versions/bu-versions.php'));
 	}
 
 	function admin_menu() {
