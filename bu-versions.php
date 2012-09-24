@@ -1,14 +1,17 @@
 <?php
 
 /*
- Plugin Name: BU Versions
- Description: Make and review edits to published content.
- Version: 0.5
- Author: Boston University (IS&T)
+Plugin Name: BU Versions
+Plugin URI: https://github.com/bu-ist/bu-versions
+Description: Make and review edits to published content.
+Version: 0.5
+Author: Boston University (IS&T)
+Author URI: http://www.bu.edu/tech/
 */
 
 /**
-Copyright 2012 by Boston University
+Copyright Boston University
+
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
