@@ -40,6 +40,8 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
+	const version = 0.5;
+
 	static function init() {
 
 		self::$v_factory = new BU_VPost_Factory();
@@ -101,8 +103,8 @@ class BU_Version_Admin {
 	function enqueue() {
 		// I am not using __FILE__ symlinks are converted to their physical path
 		// which is sometimes problematic
-		wp_enqueue_script('bu-versions', plugins_url('/js/bu-versions.js', 'bu-versions/bu-versions.php'));
-		wp_enqueue_style('bu-versions', plugins_url('/css/bu-versions.css', 'bu-versions/bu-versions.php'));
+		wp_enqueue_script( 'bu-versions', plugins_url('/js/bu-versions.js', 'bu-versions/bu-versions.php' ), array( 'jquery' ), BU_Version_Workflow::version );
+		wp_enqueue_style( 'bu-versions', plugins_url('/css/bu-versions.css', 'bu-versions/bu-versions.php' ), array(), BU_Version_Workflow::version );
 	}
 
 	function admin_menu() {
