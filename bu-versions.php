@@ -531,7 +531,7 @@ class BU_Version_Manager_Admin {
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['alternate_versions'] = 'Alternate Versions';
+				$new_columns['alternate_versions'] = 'Alternate Version';
 			}
 			$new_columns[$key] = $columns[$key];
 			$i++;
