@@ -48,28 +48,30 @@ class BU_Version_Workflow {
 		self::$v_factory->register_post_types();
 
 
-		self::$controller = new BU_Version_Controller(self::$v_factory);
+		self::$controller = new BU_Version_Controller( self::$v_factory );
 
-		add_action('transition_post_status', array(self::$controller, 'publish_version'), 10, 3);
-		add_filter('the_preview', array(self::$controller, 'preview'), 12); // needs to come after the regular preview filter
+		add_action( 'transition_post_status', array( self::$controller, 'publish_version' ), 10, 3 );
+		add_filter( 'the_preview', array(self::$controller, 'preview' ), 12 ); // needs to come after the regular preview filter
 
-		add_action('template_redirect', array(self::$controller, 'redirect_preview'));
-		add_action('template_redirect', array(self::$controller, 'override_meta'), 1);
+		add_action( 'template_redirect', array(self::$controller, 'redirect_preview' ) );
+		add_action( 'template_redirect', array(self::$controller, 'override_meta' ), 1);
 
-		if(version_compare($GLOBALS['wp_version'], '3.3.2', '>=')) {
-			add_action('before_delete_post', array(self::$controller, 'delete_post_handler'));
-			add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 81 ); // since we are replaying the menu the priority needs to vary
+		if ( version_compare($GLOBALS['wp_version'], '3.3.2', '>=' ) ) {
+			add_action( 'before_delete_post', array( self::$controller, 'delete_post_handler' ) );
+			// since we are replaying the menu construction the priority needs to be different for newer WP versions
+			add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 81 );
 		} else {
-			add_action('delete_post', array(self::$controller, 'delete_post_handler'));
+			add_action( 'delete_post', array( self::$controller, 'delete_post_handler' ) );
 			add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 31 );
 		}
 
-		add_action('map_meta_cap', array(self::$controller, 'map_meta_cap'), 20, 4);
+		add_action( 'map_meta_cap', array( self::$controller, 'map_meta_cap' ), 20, 4 );
 
-		add_rewrite_tag('%version_id%', '[^&]+'); // bring the version id variable to life
-		add_filter('get_edit_post_link', array(self::$controller, 'override_edit_post_link'), 10, 3);
+		// is this necessary?
+		add_rewrite_tag( '%version_id%', '[^&]+' );
+		add_filter( 'get_edit_post_link', array( self::$controller, 'override_edit_post_link' ), 10, 3 );
 
-		if(is_admin()) {
+		if (is_admin() ) {
 			self::$admin = new BU_Version_Admin( self::$v_factory );
 			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
@@ -86,18 +88,19 @@ class BU_Version_Admin {
 
 	public $v_factory;
 
-	function __construct($v_factory) {
+	function __construct( $v_factory ) {
 		$this->v_factory = $v_factory;
 	}
 
 	function bind_hooks() {
-		add_filter('parent_file', array($this, 'parent_file'));
-		add_action('admin_menu', array($this, 'admin_menu'));
-		add_action('admin_notices', array($this, 'admin_notices'));
-		add_filter('admin_body_class', array($this, 'admin_body_class'));
-		add_action('admin_enqueue_scripts', array($this, 'enqueue'), 10, 1);
-		add_action('add_meta_boxes', array($this, 'add_meta_boxes'), 10, 2);
-		add_action('save_post', array($this, 'save_page_template'), 10, 2);
+		add_filter( 'parent_file', array( $this, 'parent_file' ) );
+		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
+		add_filter( 'admin_body_class', array( $this, 'admin_body_class' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ), 10, 1 );
+		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
+		add_action( 'save_post', array( $this, 'save_page_template' ), 10, 2 );
+		add_action( 'admin_footer-post.php', array( $this, 'confirmation_dialog_template') );
 	}
 
 	function enqueue() {
