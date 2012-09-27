@@ -36,7 +36,8 @@ jQuery(function($) {
 			}
 
 		});
-		$.get(ajaxurl, {'action': 'bu_versions_has_changed'}, function(data) {
+		var post_id = $(this).find('[name="post_ID"]').val();
+		$.get(ajaxurl, {'action': 'bu_versions_has_changed', 'post_id': post_id}, function(data) {
 			if( ! data.changed) {
 				$dialog.find('.changed').hide();
 			}
