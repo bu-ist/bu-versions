@@ -985,7 +985,7 @@ class BU_Version {
 
 	function has_meta_changed() {
 		$copied_keys = get_post_meta( $this->post->ID, '_bu_version_copied_keys', true );
-		foreach ( $meta_keys as $key ) {
+		foreach ( $copied_keys as $key ) {
 			$alternate_values = get_post_meta( $this->post->ID, $key );
 			$original_values = get_post_meta( $this->original->ID, $key );
 			if ( ! count( array_diff_assoc( $alternate_values, $original_values ) ) == 0 ) {
