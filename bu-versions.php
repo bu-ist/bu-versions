@@ -32,10 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /**
  * @todo split into multiple files
  * @todo verify presence of alternate version when loading original to fix orphans.
- * @todo switch to using the 'redirect_post_location'
- * */
-
-
+ **/
 
 class BU_Version_Workflow {
 
@@ -80,12 +77,6 @@ class BU_Version_Workflow {
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
 		}
 
-		if ( defined( 'DOING_AJAX' ) && DOING_AJAX == true ) {
-			require_once dirname( __FILE__ ) . '/ajax.php';
-
-			add_action( 'wp_ajax_bu_versions_has_changed', 'bu_versions_ajax_has_changed' );
-		}
-
 	}
 
 }
@@ -115,18 +106,8 @@ class BU_Version_Admin {
 	function enqueue() {
 		// I am not using __FILE__ symlinks are converted to their physical path
 		// which is sometimes problematic
-
-		$plugin_file = 'bu-versions/bu-versions.php';
-
-		wp_enqueue_script( 'bu-versions', plugins_url('/js/bu-versions.js', $plugin_file ), array( 'jquery-ui-dialog' ), BU_Version_Workflow::version );
-		wp_enqueue_style( 'bu-versions', plugins_url('/css/bu-versions.css', $plugin_file ), array(), BU_Version_Workflow::version );
-
-		if ( 'classic' == get_user_option( 'admin_color') ) {
-			wp_enqueue_style ( 'jquery-ui-css',  plugins_url( '/css/jquery-ui-classic.css', $plugin_file ) );
-		} else {
-			wp_enqueue_style ( 'jquery-ui-css',  plugins_url( '/css/jquery-ui-fresh.css', $plugin_file ) );
-		}
-
+		wp_enqueue_script( 'bu-versions', plugins_url('/js/bu-versions.js', 'bu-versions/bu-versions.php' ), array( 'jquery' ), BU_Version_Workflow::version );
+		wp_enqueue_style( 'bu-versions', plugins_url('/css/bu-versions.css', 'bu-versions/bu-versions.php' ), array(), BU_Version_Workflow::version );
 	}
 
 	function admin_menu() {
@@ -142,6 +123,7 @@ class BU_Version_Admin {
 			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
 
 			add_filter('views_edit-' . $original_post_type, array($manager->admin, 'filter_status_buckets'));
+
 		}
 
 		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
@@ -268,10 +250,6 @@ class BU_Version_Admin {
 		$page_template = get_post_meta($post->ID, '_wp_page_template', true);
 
 		include dirname( __FILE__ ) . '/interface/page-template.php';
-	}
-
-	function confirmation_dialog_template( ) {
-		include dirname( __FILE__ ) . '/interface/confirmation-dialog.php';
 	}
 }
 
@@ -616,6 +594,7 @@ class BU_Version_Controller {
 	}
 
 	function publish_version($new_status, $old_status, $post) {
+
 		if($new_status === 'publish' && $old_status !== 'publish' && $this->v_factory->is_alt($post->post_type)) {
 
 			$manager = $this->v_factory->get($post->post_type);
@@ -981,30 +960,6 @@ class BU_Version {
 		$permalink = get_permalink( $this->original );
 		$url = add_query_arg( array( 'version_id' => $this->post->ID, 'preview'=> 'true' ), $permalink );
 		return $url;
-	}
-
-	function has_meta_changed() {
-		$copied_keys = get_post_meta( $this->post->ID, '_bu_version_copied_keys', true );
-		foreach ( $meta_keys as $key ) {
-			$alternate_values = get_post_meta( $this->post->ID, $key );
-			$original_values = get_post_meta( $this->original->ID, $key );
-			if ( ! count( array_diff_assoc( $alternate_values, $original_values ) ) == 0 ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	function has_changed() {
-		if ( $this->post->post_content != $this->original->post_content ) {
-			return true;
-		}
-
-		return $this->has_meta_changed();
-	}
-
-	function last_updated() {
-		return mysql2date( get_option('date_format'), $this->post->post_modified ) ;
 	}
 
 }
