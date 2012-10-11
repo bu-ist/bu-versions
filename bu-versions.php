@@ -307,7 +307,6 @@ class BU_VPost_Factory {
 
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
 
-
 		$alt_supported_features = array(
 			'thumbnail' => array('_thumbnail_id'),
 			'bu-content-banner' => array('_bu_banner'),
@@ -329,9 +328,13 @@ class BU_VPost_Factory {
 
 		foreach($post_types as $type) {
 
+			$should_register = true;
+			if ( $type->name == 'attachment' || strpos( $type->name, '_alt') !== false ) {
+				$should_register = false;
+			}
 			// allow plugins/themes to control whether a post type supports alternate versions
 			// consider using post_type supports
-			if(false === apply_filters('bu_alt_versions_for_type', true, $type)) {
+			if(false === apply_filters('bu_alt_versions_for_type', $should_register, $type)) {
 				continue;
 			}
 
