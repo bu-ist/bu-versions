@@ -113,10 +113,11 @@ class BU_Version_Admin {
 		$v_type_managers = $this->v_factory->managers();
 		foreach( $v_type_managers as $type => $manager ) {
 			$original_post_type = $manager->get_orig_post_type();
+			$post_type_obj = get_post_type_object( $type );
 			if( $original_post_type === 'post' ) {
-				add_submenu_page( 'edit.php', null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php', null, 'Alternate Versions', $post_type_obj->cap->edit_posts, 'edit.php?post_type=' . $type);
 			} else {
-				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', $post_type_obj->cap->edit_posts, 'edit.php?post_type=' . $type);
 			}
 			add_action('manage_' . $original_post_type . '_posts_columns', array($manager->admin, 'orig_columns'));
 			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
