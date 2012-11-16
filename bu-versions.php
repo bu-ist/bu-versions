@@ -557,7 +557,9 @@ class BU_Version_Manager_Admin {
 		if(!empty($version_id)) {
 			$version = new BU_Version();
 			$version->get($version_id);
-			printf('<a class="bu_version_edit" href="%s" title="%s">edit version</a>', $version->get_edit_url('display'), esc_attr(__( 'Edit this item')));
+			if( current_user_can( 'edit_post', $version_id ) ) {
+				printf('<a class="bu_version_edit" href="%s" title="%s">edit version</a>', $version->get_edit_url('display'), esc_attr(__( 'Edit this item')));
+			}
 		} else {
 			$post = get_post($post_id);
 			if($post->post_status == 'publish') {
