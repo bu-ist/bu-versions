@@ -126,7 +126,7 @@ class BU_Version_Admin {
 
 		}
 
-		add_submenu_page(null, null, null, 'edit_pages', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
+		add_submenu_page(null, null, null, 'read', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
 
 	}
 
