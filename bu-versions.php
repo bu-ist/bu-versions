@@ -113,10 +113,12 @@ class BU_Version_Admin {
 		$v_type_managers = $this->v_factory->managers();
 		foreach( $v_type_managers as $type => $manager ) {
 			$original_post_type = $manager->get_orig_post_type();
+			$post_type_obj = get_post_type_object( $type );
+
 			if( $original_post_type === 'post' ) {
-				add_submenu_page( 'edit.php', null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php', null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
 			} else {
-				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', 'edit_pages', 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
 			}
 			add_action('manage_' . $original_post_type . '_posts_columns', array($manager->admin, 'orig_columns'));
 			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
@@ -346,6 +348,9 @@ class BU_VPost_Factory {
 					$args['supports'][] = $feature;
 				}
 			}
+
+			$args['labels']['name'] = sprintf( _x('Alternate %s', 'post type general name'), $type->labels->name );
+			$args['labels']['singular_name'] = sprintf( _x('Alternate %s', 'post type singular name'), $type->labels->singular_name );
 
 
 			$args = apply_filters('bu_alt_version_args', $args, $type);
