@@ -681,6 +681,11 @@ class BU_Version_Controller {
 			}
 
 			$v_manager = $this->v_factory->get_alt_manager($post->post_type);
+			$post_type_obj = get_post_type_object( $v_manager->post_type );
+
+			if ( ! current_user_can( $post_type_obj->cap->edit_posts ) ) {
+				wp_die("You do not have permission to create an alternate version of this post.");
+			}
 
 			$result = $v_manager->create( $post_id );
 			if( ! is_wp_error( $result ) ) {
