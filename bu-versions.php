@@ -94,6 +94,7 @@ class BU_Version_Admin {
 
 	function bind_hooks() {
 		add_filter( 'parent_file', array( $this, 'parent_file' ) );
+		add_action( 'admin_init', array( $this, 'admin_init' ) );
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 		add_filter( 'admin_body_class', array( $this, 'admin_body_class' ) );
@@ -109,6 +110,16 @@ class BU_Version_Admin {
 		wp_enqueue_style( 'bu-versions', plugins_url('/css/bu-versions.css', 'bu-versions/bu-versions.php' ), array(), BU_Version_Workflow::version );
 	}
 
+	function admin_init() {
+		$v_type_managers = $this->v_factory->managers();
+		foreach( $v_type_managers as $type => $manager ) {
+			$original_post_type = $manager->get_orig_post_type();
+			add_action('manage_' . $original_post_type . '_posts_columns', array($manager->admin, 'orig_columns'));
+			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
+			add_filter('views_edit-' . $original_post_type, array($manager->admin, 'filter_status_buckets'));
+		}
+	}
+
 	function admin_menu() {
 		$v_type_managers = $this->v_factory->managers();
 		foreach( $v_type_managers as $type => $manager ) {
@@ -119,15 +130,8 @@ class BU_Version_Admin {
 			} else {
 				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', $post_type_obj->cap->edit_posts, 'edit.php?post_type=' . $type);
 			}
-			add_action('manage_' . $original_post_type . '_posts_columns', array($manager->admin, 'orig_columns'));
-			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
-
-			add_filter('views_edit-' . $original_post_type, array($manager->admin, 'filter_status_buckets'));
-
 		}
-
 		add_submenu_page(null, null, null, 'read', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
-
 	}
 
 	function admin_body_class($classes) {
