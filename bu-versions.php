@@ -190,7 +190,7 @@ class BU_Version_Admin {
 
 						$overwritten_post_id = get_option('_bu_version_post_overwritten');
 						if(!empty($overwritten_post_id) && $post->ID == $overwritten_post_id) {
-							printf('<div class="updated bu-version-notice"><p>The alternate version has replace the data of this post and been deleted.</p></div>');
+							printf('<div class="updated bu-version-notice"><p>The alternate version has replaced the data of this post and been deleted.</p></div>');
 							delete_option('_bu_version_post_overwritten');
 						}
 					}
