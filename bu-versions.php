@@ -794,7 +794,7 @@ class BU_Version_Controller {
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => 'Edit Original', 'href' => $version->get_original_edit_url() ) );
 				}
 
-				if ( $version->post->ID != $current_object->ID && $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
+				if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
 				}
 
