@@ -75,8 +75,10 @@ class BU_Version_Workflow {
 			self::$admin = new BU_Version_Admin( self::$v_factory );
 			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
+			add_filter( 'redirect_post_location', array( self::$controller, 'published_version_redirect_loc' ), 10, 2 );
 		}
 
+		add_action( 'shutdown', array( self::$controller, 'shutdown_handler' ) );
 	}
 
 }
@@ -575,9 +577,11 @@ class BU_Version_Manager_Admin {
 
 class BU_Version_Controller {
 	public $v_factory;
+	public $published_versions;
 
 	function __construct($v_factory) {
 		$this->v_factory = $v_factory;
+		$this->published_versions = array();
 	}
 
 	function map_meta_cap($caps, $cap, $user_id, $args) {
@@ -609,18 +613,35 @@ class BU_Version_Controller {
 			$manager = $this->v_factory->get($post->post_type);
 			$version = $manager->publish( $post->ID );
 			if( $version ) {
-				wp_redirect($version->get_original_edit_url());
-				exit;
-			} else {
-				wp_die(sprintf('The alternate version id: %s could not be published.', $post->ID));
+				$this->published_versions[] = $version;
 			}
 		}
 	}
 
+	function shutdown_handler() {
+		if ( is_array( $this->published_versions ) && count( $this->published_versions ) > 0 ) {
+			foreach( $this->published_versions as $version ) {
+				$version->delete_version();
+			}
+		}
+	}
+
+	function published_version_redirect_loc( $location, $post_id ) {
+		if ( $version = $this->get_published_version( $post_id ) ) {
+			$location = $version->get_original_edit_url();
+		}
+		return $location;
+	}
+
+	function get_published_version( $post_id ) {
+		foreach( $this->published_versions as $version ) {
+			if ( is_object( $version->post ) && $post_id == $version->post->ID ) return $version;
+		}
+		return false;
+	}
 	/**
 	 * Add filters to override post meta data
 	 **/
-
 	function override_meta() {
 		if(is_preview() && isset($_GET['version_id'])) {
 			$version_id = (int) trim($_GET['version_id']);
@@ -910,7 +931,6 @@ class BU_Version {
 			if ( isset($meta_keys ) ) {
 				$this->overwrite_original_meta( $meta_keys );
 			}
-			$this->delete_version();
 		}
 		return $result;
 	}
