@@ -4,7 +4,7 @@
 Plugin Name: BU Versions
 Plugin URI: https://github.com/bu-ist/bu-versions
 Description: Make and review edits to published content.
-Version: 0.5
+Version: 0.6
 Author: Boston University (IS&T)
 Author URI: http://www.bu.edu/tech/
 */
@@ -40,7 +40,7 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
-	const version = 0.5;
+	const version = 0.6;
 
 	static function init() {
 
@@ -199,8 +199,6 @@ class BU_Version_Admin {
 			}
 		}
 	}
-
-
 
 	function parent_file($file) {
 		if(strpos($file, 'edit.php') !== false) {
