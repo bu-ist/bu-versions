@@ -130,9 +130,9 @@ class BU_Version_Admin {
 			$original_post_type = $manager->get_orig_post_type();
 			$post_type_obj = get_post_type_object( $type );
 			if( $original_post_type === 'post' ) {
-				add_submenu_page( 'edit.php', null, 'Alternate Versions', $post_type_obj->cap->edit_posts, 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php', null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
 			} else {
-				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', $post_type_obj->cap->edit_posts, 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
 			}
 		}
 		add_submenu_page(null, null, null, 'read', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
@@ -537,10 +537,19 @@ class BU_Version_Manager_Admin {
 	}
 
 	function filter_status_buckets($views) {
-
-		// need to handle counts
-		$views['pending_edits'] = sprintf('<a href="edit.php?post_type=%s">Alternate Versions</a>', $this->post_type);
+		$post_type_obj = get_post_type_object( $this->post_type );
+		$count = $this->get_total_post_count();
+		$views['pending_edits'] = sprintf( '<a href="edit.php?post_type=%s">%s <span class="count">(%s)</span></a>', $this->post_type, $post_type_obj->labels->name, $count );
 		return $views;
+	}
+
+	function get_total_post_count() {
+		$count = 0;
+		$stats = wp_count_posts( $this->post_type );
+		foreach ( $stats as $s ) {
+			$count += $s;
+		}
+		return $count;
 	}
 
 
@@ -551,7 +560,8 @@ class BU_Version_Manager_Admin {
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['alternate_versions'] = 'Alternate Version';
+				$post_type_obj = get_post_type_object( $this->post_type );
+				$new_columns['alternate_versions'] = $post_type_obj->labels->singular_name;
 			}
 			$new_columns[$key] = $columns[$key];
 			$i++;
