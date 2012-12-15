@@ -581,9 +581,7 @@ class BU_Version_Manager_Admin {
 			}
 		} else {
 			$post = get_post($post_id);
-			if($post->post_status == 'publish') {
-				printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Version_Controller::get_URL($post));
-			}
+			printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Version_Controller::get_URL($post));
 		}
 	}
 }
