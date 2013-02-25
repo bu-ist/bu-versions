@@ -116,6 +116,7 @@ class BU_Version_Admin {
 		// I am not using __FILE__ symlinks are converted to their physical path
 		// which is sometimes problematic
 		wp_enqueue_script( 'bu-versions', plugins_url('/js/bu-versions.js', 'bu-versions/bu-versions.php' ), array( 'jquery' ), BU_Version_Workflow::version );
+		wp_localize_script( 'bu-versions', 'buVersionsL10N', array( 'replace' => __('Replace Original', BUV_TEXTDOMAIN) ) );
 		wp_enqueue_style( 'bu-versions', plugins_url('/css/bu-versions.css', 'bu-versions/bu-versions.php' ), array(), BU_Version_Workflow::version );
 	}
 
