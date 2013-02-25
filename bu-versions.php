@@ -4,7 +4,7 @@
 Plugin Name: BU Versions
 Plugin URI: https://github.com/bu-ist/bu-versions
 Description: Make and review edits to published content.
-Version: 0.5
+Version: 0.6
 Author: Boston University (IS&T)
 Author URI: http://www.bu.edu/tech/
 */
@@ -40,7 +40,7 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
-	const version = 0.5;
+	const version = 0.6;
 
 	static function init() {
 
@@ -75,8 +75,10 @@ class BU_Version_Workflow {
 			self::$admin = new BU_Version_Admin( self::$v_factory );
 			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
+			add_filter( 'redirect_post_location', array( self::$controller, 'published_version_redirect_loc' ), 10, 2 );
 		}
 
+		add_action( 'shutdown', array( self::$controller, 'shutdown_handler' ) );
 	}
 
 }
@@ -114,6 +116,8 @@ class BU_Version_Admin {
 		$v_type_managers = $this->v_factory->managers();
 		foreach( $v_type_managers as $type => $manager ) {
 			$original_post_type = $manager->get_orig_post_type();
+			$post_type_obj = get_post_type_object( $type );
+
 			add_action('manage_' . $original_post_type . '_posts_columns', array($manager->admin, 'orig_columns'));
 			add_action('manage_' . $original_post_type . '_posts_custom_column', array($manager->admin, 'orig_column'), 10, 2);
 			add_filter('views_edit-' . $original_post_type, array($manager->admin, 'filter_status_buckets'));
@@ -126,9 +130,9 @@ class BU_Version_Admin {
 			$original_post_type = $manager->get_orig_post_type();
 			$post_type_obj = get_post_type_object( $type );
 			if( $original_post_type === 'post' ) {
-				add_submenu_page( 'edit.php', null, 'Alternate Versions', $post_type_obj->cap->edit_posts, 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php', null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
 			} else {
-				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, 'Alternate Versions', $post_type_obj->cap->edit_posts, 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
 			}
 		}
 		add_submenu_page(null, null, null, 'read', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
@@ -197,8 +201,6 @@ class BU_Version_Admin {
 			}
 		}
 	}
-
-
 
 	function parent_file($file) {
 		if(strpos($file, 'edit.php') !== false) {
@@ -351,6 +353,9 @@ class BU_VPost_Factory {
 					$args['supports'][] = $feature;
 				}
 			}
+
+			$args['labels']['name'] = sprintf( _x('Alternate %s', 'post type general name'), $type->labels->name );
+			$args['labels']['singular_name'] = sprintf( _x('Alternate %s', 'post type singular name'), $type->labels->singular_name );
 
 
 			$args = apply_filters('bu_alt_version_args', $args, $type);
@@ -532,10 +537,19 @@ class BU_Version_Manager_Admin {
 	}
 
 	function filter_status_buckets($views) {
-
-		// need to handle counts
-		$views['pending_edits'] = sprintf('<a href="edit.php?post_type=%s">Alternate Versions</a>', $this->post_type);
+		$post_type_obj = get_post_type_object( $this->post_type );
+		$count = $this->get_total_post_count();
+		$views['pending_edits'] = sprintf( '<a href="edit.php?post_type=%s">%s <span class="count">(%s)</span></a>', $this->post_type, $post_type_obj->labels->name, $count );
 		return $views;
+	}
+
+	function get_total_post_count() {
+		$count = 0;
+		$stats = wp_count_posts( $this->post_type );
+		foreach ( $stats as $s ) {
+			$count += $s;
+		}
+		return $count;
 	}
 
 
@@ -546,7 +560,8 @@ class BU_Version_Manager_Admin {
 
 		foreach($columns as $key => $value) {
 			if($i == $insertion_point) {
-				$new_columns['alternate_versions'] = 'Alternate Version';
+				$post_type_obj = get_post_type_object( $this->post_type );
+				$new_columns['alternate_versions'] = $post_type_obj->labels->singular_name;
 			}
 			$new_columns[$key] = $columns[$key];
 			$i++;
@@ -566,18 +581,18 @@ class BU_Version_Manager_Admin {
 			}
 		} else {
 			$post = get_post($post_id);
-			if($post->post_status == 'publish') {
-				printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Version_Controller::get_URL($post));
-			}
+			printf('<a class="bu_version_clone" href="%s">create clone</a>', BU_Version_Controller::get_URL($post));
 		}
 	}
 }
 
 class BU_Version_Controller {
 	public $v_factory;
+	public $published_versions;
 
 	function __construct($v_factory) {
 		$this->v_factory = $v_factory;
+		$this->published_versions = array();
 	}
 
 	function map_meta_cap($caps, $cap, $user_id, $args) {
@@ -609,18 +624,35 @@ class BU_Version_Controller {
 			$manager = $this->v_factory->get($post->post_type);
 			$version = $manager->publish( $post->ID );
 			if( $version ) {
-				wp_redirect($version->get_original_edit_url());
-				exit;
-			} else {
-				wp_die(sprintf('The alternate version id: %s could not be published.', $post->ID));
+				$this->published_versions[] = $version;
 			}
 		}
 	}
 
+	function shutdown_handler() {
+		if ( is_array( $this->published_versions ) && count( $this->published_versions ) > 0 ) {
+			foreach( $this->published_versions as $version ) {
+				$version->delete_version();
+			}
+		}
+	}
+
+	function published_version_redirect_loc( $location, $post_id ) {
+		if ( $version = $this->get_published_version( $post_id ) ) {
+			$location = $version->get_original_edit_url();
+		}
+		return $location;
+	}
+
+	function get_published_version( $post_id ) {
+		foreach( $this->published_versions as $version ) {
+			if ( is_object( $version->post ) && $post_id == $version->post->ID ) return $version;
+		}
+		return false;
+	}
 	/**
 	 * Add filters to override post meta data
 	 **/
-
 	function override_meta() {
 		if(is_preview() && isset($_GET['version_id'])) {
 			$version_id = (int) trim($_GET['version_id']);
@@ -773,7 +805,7 @@ class BU_Version_Controller {
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => 'Edit Original', 'href' => $version->get_original_edit_url() ) );
 				}
 
-				if ( $version->post->ID != $current_object->ID && $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
+				if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => 'Edit Alternate Version', 'href' => $version->get_edit_url() ) );
 				}
 
@@ -910,7 +942,6 @@ class BU_Version {
 			if ( isset($meta_keys ) ) {
 				$this->overwrite_original_meta( $meta_keys );
 			}
-			$this->delete_version();
 		}
 		return $result;
 	}

@@ -42,6 +42,11 @@ add_filter('bu_alt_versions_feature_support', 'foo_register_alt_version_features
 
 Changlog
 
+0.6
+* Fix issue with custom columns when using Quick Edit / Bulk Edit to modify posts.
+* Fix issue with bulk publishing / quick editing alternate versions and changing their status to "Published".
+* Include post type name in labels so that post type lists such as in the export work properly.
+
 0.5
 * Replaced the "Edit <post_type>" admin bar menu with a "Edit" dropdown.
 
