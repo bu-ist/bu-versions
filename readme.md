@@ -43,7 +43,7 @@ To complete the advanced permissions workflow, install the [BU Section Editing P
 
 ## Frequently Asked Questions ##
 
-### I'm a plugin developer and my plugin utilizes custom post meta boxes.  How do I get them to show up while editing alternate versions? ###
+### I'm a plugin developer and my plugin utilizes custom post meta boxes. How do I get them to show up while editing alternate versions? ###
 
 The plugin provides a filter which allows you to register support for your custom features for the alternate version post types.
 

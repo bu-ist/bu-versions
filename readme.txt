@@ -43,7 +43,7 @@ To complete the advanced permissions workflow, install the [BU Section Editing P
 
 == Frequently Asked Questions ==
 
-= I'm a plugin developer and my plugin utilizes custom post meta boxes.  How do I get them to show up while editing alternate versions? =
+= I’m a plugin developer and my plugin utilizes custom post meta boxes. How do I get them to show up while editing alternate versions? =
 
 The plugin provides a filter which allows you to register support for your custom features for the alternate version post types.
 
@@ -51,7 +51,7 @@ Please see our Github wiki page to learn [how to register alternate version supp
 
 == Screenshots ==
 
-1. Create alternate versions from the posts table using the "create clone" button
+1. Create alternate versions from the posts table using the “create clone” button
 2. Easily see which posts have alternate versions in progress from the posts table
 3. Admin notices help you keep track of which version of a post you are currently editing
 4. One click replacement of original post with alternate version content
