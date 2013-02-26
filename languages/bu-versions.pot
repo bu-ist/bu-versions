@@ -1,0 +1,168 @@
+# Copyright (C) 2013 BU Versions
+# This file is distributed under the same license as the BU Versions package.
+msgid ""
+msgstr ""
+"Project-Id-Version: BU Versions 0.6\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/tag/bu-versions\n"
+"POT-Creation-Date: 2013-02-26 00:57:41+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2013-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: bu-versions.php:120
+msgid "Replace Original"
+msgstr ""
+
+#: bu-versions.php:191
+msgid "original"
+msgstr ""
+
+#: bu-versions.php:192
+msgid ""
+"This is a clone of an existing %s and will replace the %s when published."
+msgstr ""
+
+#: bu-versions.php:199
+msgid "Edit"
+msgstr ""
+
+#: bu-versions.php:200
+msgid "There is an alternate version for this post. %s"
+msgstr ""
+
+#: bu-versions.php:208
+msgid ""
+"The alternate version has replaced the data of this post and been deleted."
+msgstr ""
+
+#: bu-versions.php:248
+msgid "Page Attributes"
+msgstr ""
+
+#: bu-versions.php:293
+msgctxt "post type general name"
+msgid "Alternate Versions"
+msgstr ""
+
+#: bu-versions.php:294
+msgctxt "post type singular name"
+msgid "Alternate Version"
+msgstr ""
+
+#: bu-versions.php:296
+msgid "Add New Version"
+msgstr ""
+
+#: bu-versions.php:297 bu-versions.php:827 bu-versions.php:831
+msgid "Edit Alternate Version"
+msgstr ""
+
+#: bu-versions.php:298
+msgid "New"
+msgstr ""
+
+#: bu-versions.php:299
+msgid "View Alternate Version"
+msgstr ""
+
+#: bu-versions.php:300
+msgid "Search Alternate Versions"
+msgstr ""
+
+#: bu-versions.php:301
+msgid "No Alternate Versions found"
+msgstr ""
+
+#: bu-versions.php:302
+msgid "No Alternate Versions found in Trash"
+msgstr ""
+
+#: bu-versions.php:373
+msgctxt "post type general name"
+msgid "Alternate %s"
+msgstr ""
+
+#: bu-versions.php:374
+msgctxt "post type singular name"
+msgid "Alternate %s"
+msgstr ""
+
+#: bu-versions.php:596
+msgid "edit version"
+msgstr ""
+
+#: bu-versions.php:597
+msgid "Edit this item"
+msgstr ""
+
+#: bu-versions.php:601
+msgid "create clone"
+msgstr ""
+
+#: bu-versions.php:602
+msgid "Create alternate version of this item"
+msgstr ""
+
+#: bu-versions.php:736
+msgid "The post to be cloned could not be found."
+msgstr ""
+
+#: bu-versions.php:743
+msgid "You do not have permission to create an alternate version of this post."
+msgstr ""
+
+#: bu-versions.php:752
+msgid "The alternate version could not be created. "
+msgstr ""
+
+#: bu-versions.php:820
+msgctxt "admin bar menu group label"
+msgid "Edit"
+msgstr ""
+
+#: bu-versions.php:823
+msgid "Edit Original"
+msgstr ""
+
+#: bu-versions.php:907
+msgid "An alternate version already exists for this post."
+msgstr ""
+
+#: bu-versions.php:912
+msgid "The post ID: %s could not be found."
+msgstr ""
+
+#: interface/page-template.php:1
+msgid "Template"
+msgstr ""
+
+#: interface/page-template.php:2
+msgid "Page Template"
+msgstr ""
+
+#: interface/page-template.php:4
+msgid "Default Template"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "BU Versions"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "https://developer.bu.edu/bu-versions"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Make and review edits to published content."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Boston University (IS&T)"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://blogs.bu.edu/web/"
+msgstr ""

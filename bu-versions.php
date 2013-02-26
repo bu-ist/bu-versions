@@ -1,12 +1,13 @@
 <?php
-
 /*
 Plugin Name: BU Versions
-Plugin URI: https://github.com/bu-ist/bu-versions
+Plugin URI: https://developer.bu.edu/bu-versions
+Author: Boston University (IS&T)
+Author URI: http://blogs.bu.edu/web/
 Description: Make and review edits to published content.
 Version: 0.6
-Author: Boston University (IS&T)
-Author URI: http://www.bu.edu/tech/
+Text Domain: bu-versions
+Domain Path: /languages
 */
 
 /**
@@ -88,9 +89,14 @@ class BU_Version_Workflow {
 		add_action( 'shutdown', array( self::$controller, 'shutdown_handler' ) );
 	}
 
+	static function l10n() {
+		load_plugin_textdomain( BUV_TEXTDOMAIN, false, plugin_basename( dirname( __FILE__ ) ) . '/languages/' );
+	}
+
 }
 
 add_action('init', array('BU_Version_Workflow', 'init'), 999);
+add_action('init', array('BU_Version_Workflow', 'l10n'), 5);
 
 
 class BU_Version_Admin {
