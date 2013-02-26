@@ -50,7 +50,7 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 		$v_factory = BU_Version_Workflow::$v_factory;
 		$v_page_manager = $v_factory->get_alt_manager('page');
 		$version = $v_page_manager->create($page_id);
-		
+
 		$new_meta = '<p>Yep.</p>';
 		$_POST['awesome_foo_html'] = $new_meta;
 		$postdata = (array) $version->post;
@@ -75,20 +75,20 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 		$v_factory = BU_Version_Workflow::$v_factory;
 		$v_page_manager = $v_factory->get_alt_manager('page');
 		$version = $v_page_manager->create($page_id);
-		
+
 		$new_meta = '<p>Yep.</p>';
 		$_POST['awesome_foo_html'] = $new_meta;
 		$postdata = (array) $version->post;
 		$postdata['post_content'] = "New post data";
 		wp_update_post($postdata);
 		unset($_POST['awesome_foo_html']);
-		
-		// funky set up for testing the overriding of meta that happens during a 
+
+		// funky set up for testing the overriding of meta that happens during a
 		// preview
-		$_GET['version_id'] = $version->post->ID;	
+		$_GET['version_id'] = $version->post->ID;
 		query_posts(array('pageid' => $page_id, 'preview' => true));
 		BU_Version_Workflow::$controller->override_meta();
-		
+
 		$preview_meta = get_post_meta($page_id, $this->meta_key, true);
 
 		$this->assertEquals($new_meta, $preview_meta);
@@ -110,8 +110,10 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 		if ((defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) || (defined('DOING_AJAX') && DOING_AJAX)) {
 			return;
 		}
-		
-		$html = trim($_POST['awesome_foo_html']);
-		update_post_meta($post_id, $this->meta_key, $html);		
+
+		if (isset($_POST['awesome_foo_html'])) {
+			$html = trim($_POST['awesome_foo_html']);
+			update_post_meta($post_id, $this->meta_key, $html);
+		}
 	}
 }
