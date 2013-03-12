@@ -67,7 +67,7 @@ Please see our Github wiki page to learn [how to register alternate version supp
 ![5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://s.wordpress.org/extend/plugins/bu-versions/assets/screenshot-5.png)
 
 
-## Changlog ##
+## Changelog ##
 
 ### 0.7 ###
 

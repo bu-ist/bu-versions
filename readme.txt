@@ -57,7 +57,7 @@ Please see our Github wiki page to learn [how to register alternate version supp
 4. One click replacement of original post with alternate version content
 5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end
 
-== Changlog ==
+== Changelog ==
 
 = 0.7 =
 
