@@ -263,11 +263,13 @@ class BU_Version_Admin {
 
 		if( ! $manager || $manager->get_orig_post_type() != 'page' ) return;
 
-		$page_template = strip_tags( trim( $_POST['bu_page_template'] ) );
-		$page_templates = get_page_templates();
+		if( isset( $_POST['bu_page_template'] ) ) {
+			$page_template = strip_tags( trim( $_POST['bu_page_template'] ) );
+			$page_templates = get_page_templates();
 
-		if ( 'default' == $page_template || in_array($page_template, $page_templates) ) {
-			update_post_meta($post_id, '_wp_page_template',  $page_template);
+			if ( 'default' == $page_template || in_array($page_template, $page_templates) ) {
+				update_post_meta($post_id, '_wp_page_template',  $page_template);
+			}
 		}
 	}
 
@@ -467,15 +469,13 @@ class BU_Version_Manager {
 	}
 
 	function create( $post_id ) {
-
 		$version = new BU_Version();
-
 		$result = $version->create( $post_id, $this->post_type, $this->meta_keys );
 
-		if( is_wp_error( $result ) ) {
-			return $result;
-		} else {
+		if( $result && ! is_wp_error( $result ) ) {
 			return $version;
+		} else {
+			return $result;
 		}
 	}
 
@@ -484,10 +484,10 @@ class BU_Version_Manager {
 			$version->get($post_id);
 
 			$result =  $version->publish( $this->meta_keys );
-			if( $result ) {
+			if( $result && ! is_wp_error( $result ) ) {
 				return $version;
 			} else {
-				return false;
+				return $result;
 			}
 	}
 
@@ -644,8 +644,10 @@ class BU_Version_Controller {
 
 			$manager = $this->v_factory->get($post->post_type);
 			$version = $manager->publish( $post->ID );
-			if( $version ) {
+			if( $version && ! is_wp_error( $version ) ) {
 				$this->published_versions[] = $version;
+			} else {
+				error_log( "The alternate version could not be published. " . $version->get_error_message() );
 			}
 		}
 	}
@@ -747,7 +749,7 @@ class BU_Version_Controller {
 			}
 
 			$result = $v_manager->create( $post_id );
-			if( ! is_wp_error( $result ) ) {
+			if( $result && ! is_wp_error( $result ) ) {
 				$redirect_url = add_query_arg(array('post' => $result->get_id(), 'action' => 'edit'), 'post.php');
 				wp_redirect($redirect_url);
 				exit();
@@ -888,7 +890,9 @@ class BU_Version {
 	 **/
 	function get( $version_id ) {
 		$this->post = get_post( $version_id );
-		$this->original = get_post( $this->post->post_parent );
+		if( is_object( $this->post ) ) {
+			$this->original = get_post( $this->post->post_parent );
+		}
 	}
 
 	/**
@@ -919,16 +923,18 @@ class BU_Version {
 		$new_version['post_title'] = $this->original->post_title;
 		$new_version['post_excerpt'] = $this->original->post_excerpt;
 
-		$result = wp_insert_post($new_version);
+		$result = wp_insert_post($new_version, true);
 
-		if ( ! is_wp_error( $result ) ) {
+		if ( $result && ! is_wp_error( $result ) ) {
 			$this->post = get_post( $result );
 			$this->copy_original_meta( $meta_keys );
 			update_post_meta( $this->original->ID, self::tracking_meta_key, $this->post->ID );
+		} else {
+			if ( ! is_wp_error( $result ) ) {
+				$result = new WP_Error( 'alternate_insert_failed', __( 'Version post insertion failed.', BUV_TEXTDOMAIN ) );
+			}
 		}
-
 		return $result;
-
 	}
 
 	/**
@@ -951,17 +957,25 @@ class BU_Version {
 	 * Publish the alternate version and overwrite the original.
 	 **/
 	function publish( $meta_keys = null ) {
-		if ( ! isset( $this->original ) || ! isset ( $this->post ) ) return false;
+		if ( ! isset( $this->original ) || ! isset ( $this->post ) ) {
+			return new WP_Error( 'invalid_alternate_version', __( 'Invalid alternate version.', BUV_TEXTDOMAIN ) );;
+		}
 
 		$post = (array) $this->original;
 		$post['post_title'] = $this->post->post_title;
 		$post['post_content'] = $this->post->post_content;
 		$post['post_excerpt'] = $this->post->post_excerpt;
-		$result = wp_update_post( $post );
-		if ( ! is_wp_error( $result ) ) {
+
+		$result = wp_update_post( $post, true );
+
+		if ( $result && ! is_wp_error( $result ) ) {
 			add_option( '_bu_version_post_overwritten', $result ); // used for notification
-			if ( isset($meta_keys ) ) {
+			if ( isset( $meta_keys ) ) {
 				$this->overwrite_original_meta( $meta_keys );
+			}
+		} else {
+			if ( ! is_wp_error( $result ) ) {
+				$result = new WP_Error( 'alternate_update_failed', __( 'Original post update failed.', BUV_TEXTDOMAIN ) );
 			}
 		}
 		return $result;
