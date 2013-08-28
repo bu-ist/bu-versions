@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the BU Versions package.
 msgid ""
 msgstr ""
-"Project-Id-Version: BU Versions 0.6\n"
+"Project-Id-Version: BU Versions 0.7\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/bu-versions\n"
-"POT-Creation-Date: 2013-02-26 00:57:41+00:00\n"
+"POT-Creation-Date: 2013-08-28 13:43:19+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -12,127 +12,139 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 
-#: bu-versions.php:120
+#: bu-versions.php:125
 msgid "Replace Original"
 msgstr ""
 
-#: bu-versions.php:191
+#: bu-versions.php:196
 msgid "original"
 msgstr ""
 
-#: bu-versions.php:192
+#: bu-versions.php:197
 msgid ""
 "This is a clone of an existing %s and will replace the %s when published."
 msgstr ""
 
-#: bu-versions.php:199
+#: bu-versions.php:204
 msgid "Edit"
 msgstr ""
 
-#: bu-versions.php:200
+#: bu-versions.php:205
 msgid "There is an alternate version for this post. %s"
 msgstr ""
 
-#: bu-versions.php:208
+#: bu-versions.php:213
 msgid ""
 "The alternate version has replaced the data of this post and been deleted."
 msgstr ""
 
-#: bu-versions.php:248
+#: bu-versions.php:253
 msgid "Page Attributes"
 msgstr ""
 
-#: bu-versions.php:293
+#: bu-versions.php:298
 msgctxt "post type general name"
 msgid "Alternate Versions"
 msgstr ""
 
-#: bu-versions.php:294
+#: bu-versions.php:299
 msgctxt "post type singular name"
 msgid "Alternate Version"
 msgstr ""
 
-#: bu-versions.php:296
+#: bu-versions.php:301
 msgid "Add New Version"
 msgstr ""
 
-#: bu-versions.php:297 bu-versions.php:827 bu-versions.php:831
+#: bu-versions.php:302 bu-versions.php:832 bu-versions.php:836
 msgid "Edit Alternate Version"
 msgstr ""
 
-#: bu-versions.php:298
+#: bu-versions.php:303
 msgid "New"
 msgstr ""
 
-#: bu-versions.php:299
+#: bu-versions.php:304
 msgid "View Alternate Version"
 msgstr ""
 
-#: bu-versions.php:300
+#: bu-versions.php:305
 msgid "Search Alternate Versions"
 msgstr ""
 
-#: bu-versions.php:301
+#: bu-versions.php:306
 msgid "No Alternate Versions found"
 msgstr ""
 
-#: bu-versions.php:302
+#: bu-versions.php:307
 msgid "No Alternate Versions found in Trash"
 msgstr ""
 
-#: bu-versions.php:373
+#: bu-versions.php:378
 msgctxt "post type general name"
 msgid "Alternate %s"
 msgstr ""
 
-#: bu-versions.php:374
+#: bu-versions.php:379
 msgctxt "post type singular name"
 msgid "Alternate %s"
 msgstr ""
 
-#: bu-versions.php:596
+#: bu-versions.php:599
 msgid "edit version"
 msgstr ""
 
-#: bu-versions.php:597
+#: bu-versions.php:600
 msgid "Edit this item"
 msgstr ""
 
-#: bu-versions.php:601
+#: bu-versions.php:604
 msgid "create clone"
 msgstr ""
 
-#: bu-versions.php:602
+#: bu-versions.php:605
 msgid "Create alternate version of this item"
 msgstr ""
 
-#: bu-versions.php:736
+#: bu-versions.php:741
 msgid "The post to be cloned could not be found."
 msgstr ""
 
-#: bu-versions.php:743
+#: bu-versions.php:748
 msgid "You do not have permission to create an alternate version of this post."
 msgstr ""
 
-#: bu-versions.php:752
+#: bu-versions.php:757
 msgid "The alternate version could not be created. "
 msgstr ""
 
-#: bu-versions.php:820
+#: bu-versions.php:825
 msgctxt "admin bar menu group label"
 msgid "Edit"
 msgstr ""
 
-#: bu-versions.php:823
+#: bu-versions.php:828
 msgid "Edit Original"
 msgstr ""
 
-#: bu-versions.php:907
+#: bu-versions.php:909
 msgid "An alternate version already exists for this post."
 msgstr ""
 
-#: bu-versions.php:912
+#: bu-versions.php:914
 msgid "The post ID: %s could not be found."
+msgstr ""
+
+#: bu-versions.php:934
+msgid "Version post insertion failed."
+msgstr ""
+
+#: bu-versions.php:961
+msgid "Invalid alternate version."
+msgstr ""
+
+#: bu-versions.php:978
+msgid "Original post update failed."
 msgstr ""
 
 #: interface/page-template.php:1
@@ -152,7 +164,7 @@ msgid "BU Versions"
 msgstr ""
 
 #. Plugin URI of the plugin/theme
-msgid "https://developer.bu.edu/bu-versions"
+msgid "http://developer.bu.edu/bu-versions/"
 msgstr ""
 
 #. Description of the plugin/theme
@@ -164,5 +176,5 @@ msgid "Boston University (IS&T)"
 msgstr ""
 
 #. Author URI of the plugin/theme
-msgid "http://blogs.bu.edu/web/"
+msgid "http://sites.bu.edu/web/"
 msgstr ""
