@@ -49,7 +49,7 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
-	const version = 0.7.1;
+	const version = '0.7.1';
 
 	static function init() {
 
