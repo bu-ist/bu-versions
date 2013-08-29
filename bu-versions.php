@@ -5,7 +5,7 @@ Plugin URI: http://developer.bu.edu/bu-versions/
 Author: Boston University (IS&T)
 Author URI: http://sites.bu.edu/web/
 Description: Make and review edits to published content.
-Version: 0.7
+Version: 0.7.1
 Text Domain: bu-versions
 Domain Path: /languages
 */
@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 /**
  * @todo split into multiple files
  * @todo verify presence of alternate version when loading original to fix orphans.
+ * @todo transition post status comes before save_post -- switching page template in alt. version and immediately hitting "Replace Original" does not work
  **/
 
 define( 'BUV_TEXTDOMAIN', 'bu-versions' );
@@ -48,7 +49,7 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
-	const version = 0.7;
+	const version = 0.7.1;
 
 	static function init() {
 
@@ -264,6 +265,7 @@ class BU_Version_Admin {
 		if( ! $manager || $manager->get_orig_post_type() != 'page' ) return;
 
 		if( isset( $_POST['bu_page_template'] ) ) {
+
 			$page_template = strip_tags( trim( $_POST['bu_page_template'] ) );
 			$page_templates = get_page_templates();
 
