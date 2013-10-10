@@ -931,6 +931,9 @@ class BU_Version {
 			$this->post = get_post( $result );
 			$this->copy_original_meta( $meta_keys );
 			update_post_meta( $this->original->ID, self::tracking_meta_key, $this->post->ID );
+
+			do_action( 'bu_version_create', $result, $this->post, $this->original );
+
 		} else {
 			if ( ! is_wp_error( $result ) ) {
 				$result = new WP_Error( 'alternate_insert_failed', __( 'Version post insertion failed.', BUV_TEXTDOMAIN ) );
@@ -975,6 +978,9 @@ class BU_Version {
 			if ( isset( $meta_keys ) ) {
 				$this->overwrite_original_meta( $meta_keys );
 			}
+
+			do_action( 'bu_version_publish', $result );
+
 		} else {
 			if ( ! is_wp_error( $result ) ) {
 				$result = new WP_Error( 'alternate_update_failed', __( 'Original post update failed.', BUV_TEXTDOMAIN ) );
