@@ -117,6 +117,7 @@ class BU_Version_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ), 10, 1 );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_page_template' ), 10, 2 );
+		add_filter( 'post_updated_messages', array( $this, 'version_updated_messages' ), 20 );
 	}
 
 	function enqueue() {
@@ -279,6 +280,21 @@ class BU_Version_Admin {
 		$page_template = get_post_meta($post->ID, '_wp_page_template', true);
 
 		include dirname( __FILE__ ) . '/interface/page-template.php';
+	}
+
+	function version_updated_messages($messages) {
+		global $post;
+
+		if($this->v_factory->is_alt($post->post_type)) {
+			$v_manager = $this->v_factory->get($post->post_type);
+			$orig_post_type = $v_manager->get_orig_post_type();
+
+			// Logic in edit-form-advanced.php will handle alternate posts without our help
+			if (array_key_exists($orig_post_type, $messages) && 'post' !== $orig_post_type) {
+				$messages[$post->post_type] = $messages[$orig_post_type];
+			}
+		}
+		return $messages;
 	}
 }
 
