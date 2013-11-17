@@ -1042,6 +1042,8 @@ class BU_Version {
 	 * Get the edit URL for the original
 	 **/
 	function get_original_edit_url( $context = null ) {
+		if ( ! isset( $this->original ) ) return null;
+
 		return get_edit_post_link( $this->original->ID, $context );
 	}
 
@@ -1049,6 +1051,8 @@ class BU_Version {
 	 * Get the edit URL for the alternate version
 	 **/
 	function get_edit_url( $context = 'display' ) {
+		if ( ! isset( $this->post ) ) return null;
+
 		return get_edit_post_link( $this->post->ID, $context );
 	}
 
