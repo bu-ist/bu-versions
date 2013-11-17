@@ -4,17 +4,21 @@
  *
  * To run these tests:
  * 1. Install PHPUnit (http://www.phpunit.de)
- * 2. Install the WordPress Unit Testing Framework (http://unit-test.svn.wordpress.org/trunk)
+ * 2. Install WordPress from the core development repository (http://develop.svn.wordpress.org/trunk)
  * 3. Configure wp-tests-config.php, install WordPress and create a clean DB
- * 4. Set the WP_TESTS_DIR environment variable to point at the WP Unit Testing Framework
+ * 4. Set the WP_TESTS_DIR environment variable to point at develop.svn.wordpress.org working copy
  *
  * $ cd wp-content/plugins/bu-versions
  * $ phpunit
  */
 
-$GLOBALS['wp_tests_options'] = array(
-	'active_plugins' => array( 'bu-versions/bu-versions.php' ),
-);
+require_once getenv( 'WP_TESTS_DIR' ) . '/tests/phpunit/includes/functions.php';
 
-require getenv( 'WP_TESTS_DIR' ) . '/includes/bootstrap.php';
+function _manually_load_plugin() {
+	require dirname( __FILE__ ) . '/../bu-versions.php';
+}
+tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
+
+require getenv( 'WP_TESTS_DIR' ) . '/tests/phpunit/includes/bootstrap.php';
+
 
