@@ -908,7 +908,7 @@ class BU_Version {
 	 **/
 	function get( $version_id ) {
 		$this->post = get_post( $version_id );
-		if( is_object( $this->post ) ) {
+		if( is_object( $this->post ) && $this->post->post_parent ) {
 			$this->original = get_post( $this->post->post_parent );
 		}
 	}
