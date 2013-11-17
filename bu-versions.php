@@ -199,23 +199,20 @@ class BU_Version_Admin {
 					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', BUV_TEXTDOMAIN ), $label, $edit_link);
 					printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 				} else {
-					$manager = $this->v_factory->get_alt_manager($post->post_type);
-					if(isset($manager)) {
-						$versions = $manager->get_versions($post_ID);
-						if(is_array($versions) && !empty($versions)) {
-							$edit_link = sprintf('<a href="%s" target="_blank">%s</a>', $versions[0]->get_edit_url(), __('Edit', BUV_TEXTDOMAIN ));
-							$notice = sprintf(__('There is an alternate version for this post. %s', BUV_TEXTDOMAIN ), $edit_link);
-							printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
-						}
+					$version = new BU_Version();
+					if ($version->get_version($post_ID)) {
+						$edit_link = sprintf('<a href="%s" target="_blank">%s</a>', $version->get_edit_url(), __('Edit', BUV_TEXTDOMAIN ));
+						$notice = sprintf(__('There is an alternate version for this post. %s', BUV_TEXTDOMAIN ), $edit_link);
+						printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
+					}
 
-						// post overwritten with alternate version
+					// post overwritten with alternate version
 
-						$overwritten_post_id = get_option('_bu_version_post_overwritten');
-						if(!empty($overwritten_post_id) && $post->ID == $overwritten_post_id) {
-							$notice = __('The alternate version has replaced the data of this post and been deleted.', BUV_TEXTDOMAIN);
-							printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
-							delete_option('_bu_version_post_overwritten');
-						}
+					$overwritten_post_id = get_option('_bu_version_post_overwritten');
+					if(!empty($overwritten_post_id) && $post->ID == $overwritten_post_id) {
+						$notice = __('The alternate version has replaced the data of this post and been deleted.', BUV_TEXTDOMAIN);
+						printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
+						delete_option('_bu_version_post_overwritten');
 					}
 				}
 
