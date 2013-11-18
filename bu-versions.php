@@ -904,9 +904,27 @@ class BU_Version {
 	 * @param $version_id
 	 **/
 	function get( $version_id ) {
+		global $wpdb;
+
 		$this->post = get_post( $version_id );
-		if( is_object( $this->post ) && $this->post->post_parent ) {
-			$this->original = get_post( $this->post->post_parent );
+
+		if( is_object( $this->post ) ) {
+
+			// A bug in WP < 3.2 reset post parent IDs during autosaves under certain conditions
+			// To be cautious we fall back to post meta tracking key if post_parent = 0
+			// @see http://core.trac.wordpress.org/ticket/16673
+			if ( ! $this->post->post_parent ) {
+				$original_id = $wpdb->get_var( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_bu_version' AND meta_value = $version_id" );
+				if ( $original_id )
+					$this->original = get_post( $original_id );
+			} else {
+				$original = get_post( $this->post->post_parent );
+
+				// For safety check integrity of alt. versions' post_parent field
+				$version_tracking_id = get_post_meta( $original->ID, '_bu_version', true );
+				if ( $version_tracking_id && $version_id == $version_tracking_id )
+					$this->original = $original;
+			}
 		}
 	}
 
