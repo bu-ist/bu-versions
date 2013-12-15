@@ -41,8 +41,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * @todo transition post status comes before save_post -- switching page template in alt. version and immediately hitting "Replace Original" does not work
  **/
 
-define( 'BUV_TEXTDOMAIN', 'bu-versions' );
-
 class BU_Version_Workflow {
 
 	public static $v_factory;
@@ -91,7 +89,7 @@ class BU_Version_Workflow {
 	}
 
 	static function l10n() {
-		load_plugin_textdomain( BUV_TEXTDOMAIN, false, plugin_basename( dirname( __FILE__ ) ) . '/languages/' );
+		load_plugin_textdomain( 'bu-versions', false, plugin_basename( dirname( __FILE__ ) ) . '/languages/' );
 	}
 
 }
@@ -124,7 +122,7 @@ class BU_Version_Admin {
 		// I am not using __FILE__ symlinks are converted to their physical path
 		// which is sometimes problematic
 		wp_enqueue_script( 'bu-versions', plugins_url('/js/bu-versions.js', 'bu-versions/bu-versions.php' ), array( 'jquery' ), BU_Version_Workflow::version );
-		wp_localize_script( 'bu-versions', 'buVersionsL10N', array( 'replace' => __('Replace Original', BUV_TEXTDOMAIN) ) );
+		wp_localize_script( 'bu-versions', 'buVersionsL10N', array( 'replace' => __('Replace Original', 'bu-versions') ) );
 		wp_enqueue_style( 'bu-versions', plugins_url('/css/bu-versions.css', 'bu-versions/bu-versions.php' ), array(), BU_Version_Workflow::version );
 	}
 
@@ -195,8 +193,8 @@ class BU_Version_Admin {
 						$label = $original->labels->singular_name;
 						$label[0] = strtolower($label[0]);
 					}
-					$edit_link = sprintf('<a href="%s" target="_blank">%s %s</a>', $version->get_original_edit_url(), __('original', BUV_TEXTDOMAIN ), $label);
-					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', BUV_TEXTDOMAIN ), $label, $edit_link);
+					$edit_link = sprintf('<a href="%s" target="_blank">%s %s</a>', $version->get_original_edit_url(), __('original', 'bu-versions' ), $label);
+					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', 'bu-versions' ), $label, $edit_link);
 					printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 				} else {
 					$pto = get_post_type_object($post->post_type);
@@ -209,8 +207,8 @@ class BU_Version_Admin {
 
 					$version = new BU_Version();
 					if ($version->get_version($post_ID)) {
-						$edit_link = sprintf('<a href="%s" target="_blank">%s</a>', $version->get_edit_url(), __('Edit', BUV_TEXTDOMAIN ));
-						$notice = sprintf(__('There is an alternate version for this %s. %s', BUV_TEXTDOMAIN ), $label, $edit_link);
+						$edit_link = sprintf('<a href="%s" target="_blank">%s</a>', $version->get_edit_url(), __('Edit', 'bu-versions' ));
+						$notice = sprintf(__('There is an alternate version for this %s. %s', 'bu-versions' ), $label, $edit_link);
 						printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 					}
 
@@ -219,7 +217,7 @@ class BU_Version_Admin {
 
 					$overwritten_post_id = get_option('_bu_version_post_overwritten');
 					if(!empty($overwritten_post_id) && $post->ID == $overwritten_post_id) {
-						$notice = sprintf(__('The alternate version has replaced the data of this %s and been deleted.', BUV_TEXTDOMAIN), $label);
+						$notice = sprintf(__('The alternate version has replaced the data of this %s and been deleted.', 'bu-versions'), $label);
 						printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 						delete_option('_bu_version_post_overwritten');
 					}
@@ -258,7 +256,7 @@ class BU_Version_Admin {
 			$original_post_type = $manager->get_orig_post_type();
 
 			if( $original_post_type == 'page' &&  0 != count( get_page_templates() ) ) {
-				add_meta_box('bu-page-template', __('Page Attributes', BUV_TEXTDOMAIN), array($this,'page_template_meta_box'), $post_type, 'side', 'core');
+				add_meta_box('bu-page-template', __('Page Attributes', 'bu-versions'), array($this,'page_template_meta_box'), $post_type, 'side', 'core');
 			}
 		}
 	}
@@ -319,16 +317,16 @@ class BU_VPost_Factory {
 	function register_post_types() {
 
 		$labels = array(
-			'name' => _x('Alternate Versions', 'post type general name', BUV_TEXTDOMAIN),
-			'singular_name' => _x('Alternate Version', 'post type singular name', BUV_TEXTDOMAIN),
-			'add_new' => _x('Add New', '', BUV_TEXTDOMAIN),
-			'add_new_item' => __('Add New Version', BUV_TEXTDOMAIN),
-			'edit_item' => __('Edit Alternate Version', BUV_TEXTDOMAIN),
-			'new_item' => __('New', BUV_TEXTDOMAIN),
-			'view_item' => __('View Alternate Version', BUV_TEXTDOMAIN),
-			'search_items' => __('Search Alternate Versions', BUV_TEXTDOMAIN),
-			'not_found' =>  __('No Alternate Versions found', BUV_TEXTDOMAIN),
-			'not_found_in_trash' => __('No Alternate Versions found in Trash', BUV_TEXTDOMAIN),
+			'name' => _x('Alternate Versions', 'post type general name', 'bu-versions'),
+			'singular_name' => _x('Alternate Version', 'post type singular name', 'bu-versions'),
+			'add_new' => _x('Add New', '', 'bu-versions'),
+			'add_new_item' => __('Add New Version', 'bu-versions'),
+			'edit_item' => __('Edit Alternate Version', 'bu-versions'),
+			'new_item' => __('New', 'bu-versions'),
+			'view_item' => __('View Alternate Version', 'bu-versions'),
+			'search_items' => __('Search Alternate Versions', 'bu-versions'),
+			'not_found' =>  __('No Alternate Versions found', 'bu-versions'),
+			'not_found_in_trash' => __('No Alternate Versions found in Trash', 'bu-versions'),
 			'parent_item_colon' => '',
 			'menu_name' => 'Alternate Versions'
 		);
@@ -399,8 +397,8 @@ class BU_VPost_Factory {
 				}
 			}
 
-			$args['labels']['name'] = sprintf( _x('Alternate %s', 'post type general name', BUV_TEXTDOMAIN), $type->labels->name );
-			$args['labels']['singular_name'] = sprintf( _x('Alternate %s', 'post type singular name', BUV_TEXTDOMAIN), $type->labels->singular_name );
+			$args['labels']['name'] = sprintf( _x('Alternate %s', 'post type general name', 'bu-versions'), $type->labels->name );
+			$args['labels']['singular_name'] = sprintf( _x('Alternate %s', 'post type singular name', 'bu-versions'), $type->labels->singular_name );
 
 
 			$args = apply_filters('bu_alt_version_args', $args, $type);
@@ -620,12 +618,12 @@ class BU_Version_Manager_Admin {
 			$version = new BU_Version();
 			$version->get($version_id);
 			if( current_user_can( 'edit_post', $version_id ) ) {
-				$link_txt = __('edit version', BUV_TEXTDOMAIN);
-				printf('<a class="bu_version_edit" href="%s" title="%s">%s</a>', $version->get_edit_url('display'), esc_attr__('Edit this item', BUV_TEXTDOMAIN), $link_txt);
+				$link_txt = __('edit version', 'bu-versions');
+				printf('<a class="bu_version_edit" href="%s" title="%s">%s</a>', $version->get_edit_url('display'), esc_attr__('Edit this item', 'bu-versions'), $link_txt);
 			}
 		} else {
 			$post = get_post($post_id);
-			$link_txt = __('create clone', BUV_TEXTDOMAIN);
+			$link_txt = __('create clone', 'bu-versions');
 			printf('<a class="bu_version_clone" href="%s" title="%s">%s</a>', BU_Version_Controller::get_URL($post), esc_attr__('Create alternate version of this item'), $link_txt);
 		}
 	}
@@ -762,14 +760,14 @@ class BU_Version_Controller {
 
 			$post = get_post($post_id);
 			if( ! $post ) {
-				wp_die(__("The post to be cloned could not be found.", BUV_TEXTDOMAIN));
+				wp_die(__("The post to be cloned could not be found.", 'bu-versions'));
 			}
 
 			$v_manager = $this->v_factory->get_alt_manager($post->post_type);
 			$post_type_obj = get_post_type_object( $v_manager->post_type );
 
 			if ( ! current_user_can( $post_type_obj->cap->edit_posts ) ) {
-				wp_die(__("You do not have permission to create an alternate version of this post.", BUV_TEXTDOMAIN));
+				wp_die(__("You do not have permission to create an alternate version of this post.", 'bu-versions'));
 			}
 
 			$result = $v_manager->create( $post_id );
@@ -778,7 +776,7 @@ class BU_Version_Controller {
 				wp_redirect($redirect_url);
 				exit();
 			} else {
-				wp_die(__("The alternate version could not be created. ", BUV_TEXTDOMAIN) . $result->get_error_message() );
+				wp_die(__("The alternate version could not be created. ", 'bu-versions') . $result->get_error_message() );
 			}
 		}
 	}
@@ -846,18 +844,18 @@ class BU_Version_Controller {
 			remove_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
 
 			if ( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
-				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label', BUV_TEXTDOMAIN), 'href' => get_edit_post_link( $current_object->ID ) ) );
+				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label', 'bu-versions'), 'href' => get_edit_post_link( $current_object->ID ) ) );
 
 				if ( $version->original->ID != $current_object->ID && current_user_can( 'edit_post', $version->original->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', BUV_TEXTDOMAIN), 'href' => $version->get_original_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
 				}
 
 				if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
-						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', BUV_TEXTDOMAIN), 'href' => $version->get_edit_url() ) );
+						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
 				}
 
 			} elseif ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', BUV_TEXTDOMAIN), 'href' => $version->get_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
 			}
 
 			add_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
@@ -948,12 +946,12 @@ class BU_Version {
 	function create( $post_id, $alt_post_type, $meta_keys = null ) {
 		$this->get_version( $post_id );
 		if ( $this->has_version() ) {
-			return new WP_Error( 'alternate_already_exists', __( 'An alternate version already exists for this post.', BUV_TEXTDOMAIN ) );
+			return new WP_Error( 'alternate_already_exists', __( 'An alternate version already exists for this post.', 'bu-versions' ) );
 		}
 
 		$this->original = get_post( $post_id );
 		if ( ! isset( $this->original ) ) {
-			return new WP_Error( 'alternate_no_original', sprintf( __( 'The post ID: %s could not be found.', BUV_TEXTDOMAIN ), $post_id ) );
+			return new WP_Error( 'alternate_no_original', sprintf( __( 'The post ID: %s could not be found.', 'bu-versions' ), $post_id ) );
 		}
 
 		$new_version['post_type'] = $alt_post_type;
@@ -976,7 +974,7 @@ class BU_Version {
 
 		} else {
 			if ( ! is_wp_error( $result ) ) {
-				$result = new WP_Error( 'alternate_insert_failed', __( 'Version post insertion failed.', BUV_TEXTDOMAIN ) );
+				$result = new WP_Error( 'alternate_insert_failed', __( 'Version post insertion failed.', 'bu-versions' ) );
 			}
 		}
 		return $result;
@@ -1003,7 +1001,7 @@ class BU_Version {
 	 **/
 	function publish( $meta_keys = null ) {
 		if ( ! isset( $this->original ) || ! isset ( $this->post ) ) {
-			return new WP_Error( 'invalid_alternate_version', __( 'Invalid alternate version.', BUV_TEXTDOMAIN ) );;
+			return new WP_Error( 'invalid_alternate_version', __( 'Invalid alternate version.', 'bu-versions' ) );;
 		}
 
 		$post = (array) $this->original;
@@ -1023,7 +1021,7 @@ class BU_Version {
 
 		} else {
 			if ( ! is_wp_error( $result ) ) {
-				$result = new WP_Error( 'alternate_update_failed', __( 'Original post update failed.', BUV_TEXTDOMAIN ) );
+				$result = new WP_Error( 'alternate_update_failed', __( 'Original post update failed.', 'bu-versions' ) );
 			}
 		}
 		return $result;
