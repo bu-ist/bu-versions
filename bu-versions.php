@@ -199,18 +199,27 @@ class BU_Version_Admin {
 					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', BUV_TEXTDOMAIN ), $label, $edit_link);
 					printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 				} else {
+					$pto = get_post_type_object($post->post_type);
+					if(function_exists('lcfirst')) {
+						$label = lcfirst($pto->labels->singular_name);
+					} else {
+						$label = $pto->labels->singular_name;
+						$label[0] = strtolower($label[0]);
+					}
+
 					$version = new BU_Version();
 					if ($version->get_version($post_ID)) {
 						$edit_link = sprintf('<a href="%s" target="_blank">%s</a>', $version->get_edit_url(), __('Edit', BUV_TEXTDOMAIN ));
-						$notice = sprintf(__('There is an alternate version for this post. %s', BUV_TEXTDOMAIN ), $edit_link);
+						$notice = sprintf(__('There is an alternate version for this %s. %s', BUV_TEXTDOMAIN ), $label, $edit_link);
 						printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 					}
 
 					// post overwritten with alternate version
 
+
 					$overwritten_post_id = get_option('_bu_version_post_overwritten');
 					if(!empty($overwritten_post_id) && $post->ID == $overwritten_post_id) {
-						$notice = __('The alternate version has replaced the data of this post and been deleted.', BUV_TEXTDOMAIN);
+						$notice = sprintf(__('The alternate version has replaced the data of this %s and been deleted.', BUV_TEXTDOMAIN), $label);
 						printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 						delete_option('_bu_version_post_overwritten');
 					}
