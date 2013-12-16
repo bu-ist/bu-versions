@@ -2,9 +2,9 @@
 # This file is distributed under the same license as the BU Versions package.
 msgid ""
 msgstr ""
-"Project-Id-Version: BU Versions 0.7.1\n"
+"Project-Id-Version: BU Versions 0.7.3\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/bu-versions\n"
-"POT-Creation-Date: 2013-08-29 13:04:05+00:00\n"
+"POT-Creation-Date: 2013-12-15 23:53:43+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -12,138 +12,138 @@ msgstr ""
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 
-#: bu-versions.php:126
+#: bu-versions.php:125
 msgid "Replace Original"
 msgstr ""
 
-#: bu-versions.php:197
+#: bu-versions.php:196
 msgid "original"
 msgstr ""
 
-#: bu-versions.php:198
+#: bu-versions.php:197
 msgid ""
 "This is a clone of an existing %s and will replace the %s when published."
 msgstr ""
 
-#: bu-versions.php:205
+#: bu-versions.php:210
 msgid "Edit"
 msgstr ""
 
-#: bu-versions.php:206
-msgid "There is an alternate version for this post. %s"
+#: bu-versions.php:211
+msgid "There is an alternate version for this %s. %s"
 msgstr ""
 
-#: bu-versions.php:214
+#: bu-versions.php:220
 msgid ""
-"The alternate version has replaced the data of this post and been deleted."
+"The alternate version has replaced the data of this %s and been deleted."
 msgstr ""
 
-#: bu-versions.php:254
+#: bu-versions.php:259
 msgid "Page Attributes"
 msgstr ""
 
-#: bu-versions.php:300
+#: bu-versions.php:320
 msgctxt "post type general name"
 msgid "Alternate Versions"
 msgstr ""
 
-#: bu-versions.php:301
+#: bu-versions.php:321
 msgctxt "post type singular name"
 msgid "Alternate Version"
 msgstr ""
 
-#: bu-versions.php:303
+#: bu-versions.php:323
 msgid "Add New Version"
 msgstr ""
 
-#: bu-versions.php:304 bu-versions.php:834 bu-versions.php:838
+#: bu-versions.php:324 bu-versions.php:854 bu-versions.php:858
 msgid "Edit Alternate Version"
 msgstr ""
 
-#: bu-versions.php:305
+#: bu-versions.php:325
 msgid "New"
 msgstr ""
 
-#: bu-versions.php:306
+#: bu-versions.php:326
 msgid "View Alternate Version"
 msgstr ""
 
-#: bu-versions.php:307
+#: bu-versions.php:327
 msgid "Search Alternate Versions"
 msgstr ""
 
-#: bu-versions.php:308
+#: bu-versions.php:328
 msgid "No Alternate Versions found"
 msgstr ""
 
-#: bu-versions.php:309
+#: bu-versions.php:329
 msgid "No Alternate Versions found in Trash"
 msgstr ""
 
-#: bu-versions.php:380
+#: bu-versions.php:400
 msgctxt "post type general name"
 msgid "Alternate %s"
 msgstr ""
 
-#: bu-versions.php:381
+#: bu-versions.php:401
 msgctxt "post type singular name"
 msgid "Alternate %s"
 msgstr ""
 
-#: bu-versions.php:601
+#: bu-versions.php:621
 msgid "edit version"
 msgstr ""
 
-#: bu-versions.php:602
+#: bu-versions.php:622
 msgid "Edit this item"
 msgstr ""
 
-#: bu-versions.php:606
+#: bu-versions.php:626
 msgid "create clone"
 msgstr ""
 
-#: bu-versions.php:607
+#: bu-versions.php:627
 msgid "Create alternate version of this item"
 msgstr ""
 
-#: bu-versions.php:743
+#: bu-versions.php:763
 msgid "The post to be cloned could not be found."
 msgstr ""
 
-#: bu-versions.php:750
+#: bu-versions.php:770
 msgid "You do not have permission to create an alternate version of this post."
 msgstr ""
 
-#: bu-versions.php:759
+#: bu-versions.php:779
 msgid "The alternate version could not be created. "
 msgstr ""
 
-#: bu-versions.php:827
+#: bu-versions.php:847
 msgctxt "admin bar menu group label"
 msgid "Edit"
 msgstr ""
 
-#: bu-versions.php:830
+#: bu-versions.php:850
 msgid "Edit Original"
 msgstr ""
 
-#: bu-versions.php:911
+#: bu-versions.php:949
 msgid "An alternate version already exists for this post."
 msgstr ""
 
-#: bu-versions.php:916
+#: bu-versions.php:954
 msgid "The post ID: %s could not be found."
 msgstr ""
 
-#: bu-versions.php:936
+#: bu-versions.php:977
 msgid "Version post insertion failed."
 msgstr ""
 
-#: bu-versions.php:963
+#: bu-versions.php:1004
 msgid "Invalid alternate version."
 msgstr ""
 
-#: bu-versions.php:980
+#: bu-versions.php:1024
 msgid "Original post update failed."
 msgstr ""
 

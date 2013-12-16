@@ -2,8 +2,8 @@
 Contributors: gcorne, mgburns
 Tags: content editing, workflow, version, merge, boston university, bu
 Requires at least: 3.1
-Tested up to: 3.5
-Stable tag: 0.7.1
+Tested up to: 3.8
+Stable tag: 0.7.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,18 @@ Please see our Github wiki page to learn [how to register alternate version supp
 5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end
 
 == Changelog ==
+
+= 0.7.3 =
+
+* More notification language tweaks
+* Localization updates
+
+= 0.7.2 =
+
+* Fixed bug reported by junger -- alt. versions now use appropriate post types in notification messages
+* Added hooks on version creation / publishing (bu_version_create, bu_version_publish)
+* More robust linkage between alternate versions and original posts
+* Updates to unit test bootstrap
 
 = 0.7.1 =
 

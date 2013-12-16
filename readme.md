@@ -2,8 +2,8 @@
 **Contributors:** gcorne, mgburns
 **Tags:** content editing, workflow, version, merge, boston university, bu
 **Requires at least:** 3.1
-**Tested up to:** 3.5
-**Stable tag:** 0.7.1
+**Tested up to:** 3.8
+**Stable tag:** 0.7.3
 **License:** GPLv2 or later
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,7 +43,7 @@ To complete the advanced permissions workflow, install the [BU Section Editing P
 
 ## Frequently Asked Questions ##
 
-### I'm a plugin developer and my plugin utilizes custom post meta boxes. How do I get them to show up while editing alternate versions? ###
+### I’m a plugin developer and my plugin utilizes custom post meta boxes. How do I get them to show up while editing alternate versions? ###
 
 The plugin provides a filter which allows you to register support for your custom features for the alternate version post types.
 
@@ -51,25 +51,37 @@ Please see our Github wiki page to learn [how to register alternate version supp
 
 ## Screenshots ##
 
-### 1. Create alternate versions from the posts table using the "create clone" button ###
-![1. Create alternate versions from the posts table using the "create clone" button](http://s-plugins.wordpress.org/bu-versions/assets/screenshot-1.png)
+###1. Create alternate versions from the posts table using the “create clone” button###
+![Create alternate versions from the posts table using the “create clone” button](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-1.png)
 
-### 2. Easily see which posts have alternate versions in progress from the posts table ###
-![2. Easily see which posts have alternate versions in progress from the posts table](http://s-plugins.wordpress.org/bu-versions/assets/screenshot-2.png)
+###2. Easily see which posts have alternate versions in progress from the posts table###
+![Easily see which posts have alternate versions in progress from the posts table](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-2.png)
 
-### 3. Admin notices help you keep track of which version of a post you are currently editing ###
-![3. Admin notices help you keep track of which version of a post you are currently editing](http://s-plugins.wordpress.org/bu-versions/assets/screenshot-3.png)
+###3. Admin notices help you keep track of which version of a post you are currently editing###
+![Admin notices help you keep track of which version of a post you are currently editing](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-3.png)
 
-### 4. One click replacement of original post with alternate version content ###
-![4. One click replacement of original post with alternate version content](http://s-plugins.wordpress.org/bu-versions/assets/screenshot-4.png)
+###4. One click replacement of original post with alternate version content###
+![One click replacement of original post with alternate version content](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-4.png)
 
-### 5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end ###
-![5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://s-plugins.wordpress.org/bu-versions/assets/screenshot-5.png)
+###5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end###
+![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-5.png)
 
 
 ## Changelog ##
 
-### 0.7.1. ###
+### 0.7.3 ###
+
+* More notification language tweaks
+* Localization updates
+
+### 0.7.2 ###
+
+* Fixed bug reported by junger -- alt. versions now use appropriate post types in notification messages
+* Added hooks on version creation / publishing (bu_version_create, bu_version_publish)
+* More robust linkage between alternate versions and original posts
+* Updates to unit test bootstrap
+
+### 0.7.1 ###
 
 * Improved error handling and logging
 
