@@ -667,6 +667,10 @@ class BU_Version_Controller {
 				// Publish logic runs late on save_post hook to give changes made with
 				// publish time to be committed to alternate version prior to publication
 				add_action('save_post', array($this, 'publish_version'), 9999, 2);
+			} else {
+				$version = new BU_Version();
+				$version->get($post->ID);
+				do_action('bu_version_' . $new_status, $version->post, $version->original, $old_status);
 			}
 		}
 	}
