@@ -1017,7 +1017,7 @@ class BU_Version {
 				$this->overwrite_original_meta( $meta_keys );
 			}
 
-			do_action( 'bu_version_publish', $result );
+			do_action( 'bu_version_publish', $result, $this->post );
 
 		} else {
 			if ( ! is_wp_error( $result ) ) {
