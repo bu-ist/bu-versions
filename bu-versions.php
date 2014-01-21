@@ -82,10 +82,7 @@ class BU_Version_Workflow {
 			self::$admin = new BU_Version_Admin( self::$v_factory );
 			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
-			add_filter( 'redirect_post_location', array( self::$controller, 'published_version_redirect_loc' ), 10, 2 );
 		}
-
-		add_action( 'shutdown', array( self::$controller, 'shutdown_handler' ) );
 	}
 
 	static function l10n() {
@@ -631,11 +628,9 @@ class BU_Version_Manager_Admin {
 
 class BU_Version_Controller {
 	public $v_factory;
-	public $published_versions;
 
 	function __construct($v_factory) {
 		$this->v_factory = $v_factory;
-		$this->published_versions = array();
 	}
 
 	function map_meta_cap($caps, $cap, $user_id, $args) {
@@ -684,34 +679,24 @@ class BU_Version_Controller {
 			$manager = $this->v_factory->get($post->post_type);
 			$version = $manager->publish( $post->ID );
 			if( $version && ! is_wp_error( $version ) ) {
-				$this->published_versions[] = $version;
+				// Setup redirect to original edit post screen
+				$this->redirect_location = $version->get_original_edit_url();
+				add_filter('redirect_post_location', array($this, 'published_version_redirect_loc'), 10, 2);
+
+				$version->delete_version();
 			} else {
 				error_log( "The alternate version could not be published. " . $version->get_error_message() );
 			}
 		}
 	}
 
-	function shutdown_handler() {
-		if ( is_array( $this->published_versions ) && count( $this->published_versions ) > 0 ) {
-			foreach( $this->published_versions as $version ) {
-				$version->delete_version();
-			}
-		}
-	}
-
 	function published_version_redirect_loc( $location, $post_id ) {
-		if ( $version = $this->get_published_version( $post_id ) ) {
-			$location = $version->get_original_edit_url();
+		if ( isset( $this->redirect_location ) ) {
+			$location = $this->redirect_location;
 		}
 		return $location;
 	}
 
-	function get_published_version( $post_id ) {
-		foreach( $this->published_versions as $version ) {
-			if ( is_object( $version->post ) && $post_id == $version->post->ID ) return $version;
-		}
-		return false;
-	}
 	/**
 	 * Add filters to override post meta data
 	 **/

@@ -29,25 +29,26 @@ class Test_BU_Versions extends WP_UnitTestCase {
 	function test_publish_version() {
 
 		list($original_post, $alt_version) = $this->create_version();
+		$version_edit_url = get_edit_post_link( $alt_version, null );
+		$original_edit_url = get_edit_post_link( $original_post, null );
 
 		$new_content = 'new content';
 		$alt_version->post_content = $new_content;
-		// $alt_version->post_status = 'publish'; // this would exercise logic in transition_post_status hook
+		$alt_version->post_status = 'publish';
 		wp_update_post((array) $alt_version);
 
-		// TODO: This code succesfully publishes version, but does not trigger
-		// version deletion (handled in transition_post_status callback)
-		$version =  new BU_Version();
-		$version->get($alt_version->ID);
-		$version->publish();
-
+		// Original content was overwritten
 		$new_original = get_post($alt_version->post_parent);
 		$this->assertEquals($new_original->post_content, $new_content);
 
-		// TODO: versions are marked for deletion in transition_post_status hook, but not actually
-		// deleted until the shutdown handler so this test will always fail
-		// $old_version = get_post($alt_version->ID);
-		// $this->assertNull($old_version);
+		// Alternate version was deleted
+		$old_version = get_post($alt_version->ID);
+		$this->assertNull($old_version);
+
+		// Redirect to original edit URL instead of alternate versions
+		// @see redirect_post()
+		$redirect_location = apply_filters( 'redirect_post_location', $version_edit_url, $alt_version->ID );
+		$this->assertEquals($original_edit_url, $redirect_location);
 
 	}
 
