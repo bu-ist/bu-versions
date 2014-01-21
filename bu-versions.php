@@ -57,7 +57,7 @@ class BU_Version_Workflow {
 
 		self::$controller = new BU_Version_Controller( self::$v_factory );
 
-		add_action( 'transition_post_status', array( self::$controller, 'publish_version' ), 10, 3 );
+		add_action( 'transition_post_status', array( self::$controller, 'transition_post_status' ), 10, 3 );
 		add_filter( 'the_preview', array(self::$controller, 'preview' ), 12 ); // needs to come after the regular preview filter
 
 		add_action( 'template_redirect', array(self::$controller, 'redirect_preview' ) );
@@ -660,10 +660,27 @@ class BU_Version_Controller {
 		return wp_nonce_url($url, 'create_version');
 	}
 
-	function publish_version($new_status, $old_status, $post) {
+	function transition_post_status($new_status, $old_status, $post) {
+		if( $this->v_factory->is_alt($post->post_type)) {
+			// Alternate version is being published (replacing the original)
+			if($new_status === 'publish' && $old_status !== 'publish') {
+				// Publish logic runs late on save_post hook to give changes made with
+				// publish time to be committed to alternate version prior to publication
+				add_action('save_post', array($this, 'publish_version'), 9999, 2);
+			} else {
+				$version = new BU_Version();
+				$version->get($post->ID);
+				do_action('bu_version_' . $new_status, $version->post, $version->original, $old_status);
+			}
+		}
+	}
 
-		if($new_status === 'publish' && $old_status !== 'publish' && $this->v_factory->is_alt($post->post_type)) {
+	function publish_version($post_id, $post) {
+		if( $this->v_factory->is_alt($post->post_type)) {
+			// Ensure we only run once
+			remove_action('save_post', array($this, 'publish_version'), 9999);
 
+			// Publish alternate version
 			$manager = $this->v_factory->get($post->post_type);
 			$version = $manager->publish( $post->ID );
 			if( $version && ! is_wp_error( $version ) ) {
