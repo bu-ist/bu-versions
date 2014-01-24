@@ -353,25 +353,6 @@ class BU_VPost_Factory {
 
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
 
-		$alt_supported_features = array(
-			'thumbnail' => array('_thumbnail_id'),
-			'bu-content-banner' => array('_bu_banner'),
-			'bu-post-details' => array(
-				'_bu_thumbnail',
-				'_bu_page_description',
-				'_bu_meta_description',
-				'_bu_meta_mirror_description',
-				'_bu_meta_keywords',
-				'_bu_meta_robots',
-				'_bu_title'
-			),
-			'bu-disable-autop' => array('_bu_disable_autop')
-		);
-
-		// plugins/themes can add support for particular features by filtering
-		// the array of supported features
-		$alt_supported_features = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
-
 		foreach($post_types as $type) {
 
 			$should_register = true;
@@ -388,11 +369,14 @@ class BU_VPost_Factory {
 
 			$args['capability_type'] = $type->capability_type;
 
-			foreach(array_keys($alt_supported_features) as $feature) {
-				if( post_type_supports($type->name, $feature) ) {
-					$args['supports'][] = $feature;
-				}
-			}
+			// Support all features that the original post type supported, unless we blacklist them.
+			$supports = array_keys( get_all_post_type_supports( $type->name ) );
+			$support_blacklist = array(
+				'page-attributes',
+				'trackbacks',
+				'comments'
+				);
+			$args['supports'] = array_diff( $supports, $support_blacklist );
 
 			$args['labels']['name'] = sprintf( _x('Alternate %s', 'post type general name', 'bu-versions'), $type->labels->name );
 			$args['labels']['singular_name'] = sprintf( _x('Alternate %s', 'post type singular name', 'bu-versions'), $type->labels->singular_name );
@@ -400,24 +384,11 @@ class BU_VPost_Factory {
 
 			$args = apply_filters('bu_alt_version_args', $args, $type);
 
-			$meta_keys = array();
-
-			foreach( $args['supports'] as $feature ) {
-				if( isset( $alt_supported_features[ $feature ] ) ) {
-					$meta_keys = array_merge( $meta_keys, $alt_supported_features[ $feature ] );
-				}
-			}
-
-			// special case to copy the page template
-			if( $type->name == 'page' ) {
-				$meta_keys[] = '_wp_page_template';
-			}
-
 			$v_post_type = $type->name . '_alt';
 
 			$register = register_post_type($v_post_type, $args);
 			if(!is_wp_error($register)) {
-				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args, $meta_keys);
+				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args);
 			} else {
 				error_log(sprintf('The alternate post type %s could not be registered. Error: %s', $v_post_type, $register->get_error_message()));
 			}
@@ -464,8 +435,6 @@ class BU_Version_Manager {
 	 */
 	public $post_type = null;
 
-	public $meta_keys;
-
 	/**
 	 * Post type of the originals
 	 *
@@ -475,11 +444,10 @@ class BU_Version_Manager {
 	public $orig_post_type = null;
 	public $admin = null;
 
-	function __construct($orig_post_type, $post_type, $args, $meta_keys) {
+	function __construct($orig_post_type, $post_type, $args) {
 
 		$this->post_type = $post_type;
 		$this->orig_post_type = $orig_post_type;
-		$this->meta_keys = $meta_keys;
 
 		if(is_admin()) {
 			$this->admin = new BU_Version_Manager_Admin( $this->post_type );
@@ -489,7 +457,7 @@ class BU_Version_Manager {
 
 	function create( $post_id ) {
 		$version = new BU_Version();
-		$result = $version->create( $post_id, $this->post_type, $this->meta_keys );
+		$result = $version->create( $post_id, $this->post_type );
 
 		if( $result && ! is_wp_error( $result ) ) {
 			return $version;
@@ -502,7 +470,7 @@ class BU_Version_Manager {
 			$version = new BU_Version();
 			$version->get($post_id);
 
-			$result =  $version->publish( $this->meta_keys );
+			$result =  $version->publish();
 			if( $result && ! is_wp_error( $result ) ) {
 				return $version;
 			} else {
@@ -516,11 +484,11 @@ class BU_Version_Manager {
 
 
 	function override_meta($val, $object_id, $key, $single) {
-		if( in_array( $key, $this->meta_keys ) && isset( $_GET['version_id'] )  ) {
+		if( isset( $_GET['version_id'] )  ) {
+			remove_filter('get_post_metadata', array($this, 'override_meta'), 10, 4);
 			$version_id = (int) trim( $_GET['version_id'] );
 			$version = new BU_Version();
 			$version->get($version_id);
-			remove_filter('get_post_metadata', array($this, 'override_meta'), 10, 4);
 			if($object_id == $version->original->ID) {
 				$val = get_post_meta($version->post->ID, $key);
 			}
@@ -945,7 +913,7 @@ class BU_Version {
 	 * @access public
 	 * @return int|WP_Error
 	 */
-	function create( $post_id, $alt_post_type, $meta_keys = null ) {
+	function create( $post_id, $alt_post_type ) {
 		$this->get_version( $post_id );
 		if ( $this->has_version() ) {
 			return new WP_Error( 'alternate_already_exists', __( 'An alternate version already exists for this post.', 'bu-versions' ) );
@@ -969,7 +937,7 @@ class BU_Version {
 
 		if ( $result && ! is_wp_error( $result ) ) {
 			$this->post = get_post( $result );
-			$this->copy_original_meta( $meta_keys );
+			$this->copy_original_meta();
 			update_post_meta( $this->original->ID, self::tracking_meta_key, $this->post->ID );
 
 			do_action( 'bu_version_create', $result, $this->post, $this->original );
@@ -987,21 +955,20 @@ class BU_Version {
 	 *
 	 * Because of sanization and serialization, it may be better to use SQL, but for now we are using the API
 	 **/
-	private function copy_original_meta( $meta_keys ) {
-		foreach ( $meta_keys as $key ) {
-			$values = get_post_meta( $this->original->ID, $key );
-
-			foreach ( $values as $v ) {
-				update_post_meta( $this->post->ID, $key, $v );
+	private function copy_original_meta() {
+		$meta = get_post_custom( $this->original->ID );
+		foreach ( $meta as $key => $values ) {
+			foreach ( $values as $value ) {
+				$result = add_post_meta( $this->post->ID, $key, maybe_unserialize( $value ) );
+				// error_log( sprintf( "[%s] Copying '%s' => %s ==> %s", __METHOD__, $key, $value, (int) $result ) );
 			}
 		}
-		update_post_meta( $this->post->ID, '_bu_version_copied_keys', $meta_keys);
 	}
 
 	/**
 	 * Publish the alternate version and overwrite the original.
 	 **/
-	function publish( $meta_keys = null ) {
+	function publish() {
 		if ( ! isset( $this->original ) || ! isset ( $this->post ) ) {
 			return new WP_Error( 'invalid_alternate_version', __( 'Invalid alternate version.', 'bu-versions' ) );;
 		}
@@ -1015,9 +982,7 @@ class BU_Version {
 
 		if ( $result && ! is_wp_error( $result ) ) {
 			add_option( '_bu_version_post_overwritten', $result ); // used for notification
-			if ( isset( $meta_keys ) ) {
-				$this->overwrite_original_meta( $meta_keys );
-			}
+			$this->overwrite_original_meta();
 
 			do_action( 'bu_version_publish', $result, $this->post );
 
@@ -1033,16 +998,14 @@ class BU_Version {
 	 * Replace the meta data on the original post with the meta data from the
 	 * alternate version.
 	 **/
-	private function overwrite_original_meta( $meta_keys ) {
-		$copied_keys = get_post_meta( $this->post->ID, '_bu_version_copied_keys', true );
-		foreach ( $meta_keys as $key ) {
-			// we only delete keys that we are sure were copied
-			if ( is_array( $copied_keys ) && in_array( $key, $copied_keys ) ) {
-				delete_post_meta( $this->original->ID, $key );
-			}
-			$values = get_post_meta( $this->post->ID, $key );
-			foreach ( $values as $v ) {
-				update_post_meta( $this->original->ID, $key, $v );
+	private function overwrite_original_meta() {
+		$meta = get_post_custom( $this->post->ID );
+		foreach ( $meta as $key => $values ) {
+			$result = delete_post_meta( $this->original->ID, $key );
+			// error_log( sprintf( "[%s] Deleting original meta keys for '%s' ==> %s", __METHOD__, $key, (int) $result ) );
+			foreach( $values as $value ) {
+				$result = add_post_meta( $this->original->ID, $key, maybe_unserialize( $value ) );
+				// error_log( sprintf( "[%s] Adding from alt. version '%s' -> %s ==> %s", __METHOD__, $key, $value, (int) $result ) );
 			}
 		}
 	}

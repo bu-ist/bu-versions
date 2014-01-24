@@ -8,16 +8,12 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 	public $meta_key = '_awesome_foo_html';
 
 	function setUp() {
-		add_post_type_support('page', 'awesome_foo');
-		add_filter('bu_alt_versions_feature_support', array($this, 'awesome_foo_alt_versions'), 10, 1);
 		add_action('save_post', array($this, 'save_post_handler'), 10, 2);
 		BU_Version_Workflow::$v_factory->register_post_types(); //needed because support is added so late
 		parent::setUp();
 	}
 
 	function tearDown() {
-		remove_post_type_support('page', 'awesome_foo');
-		remove_filter('bu_alt_versions_feature_support', array($this, 'awesome_foo_alt_versions'), 10, 1);
 		remove_action('save_post', array($this, 'save_post_handler'), 10, 2);
 		unset($_POST['awesome_foo_html']);
 		remove_all_filters('get_post_metadata');
@@ -95,13 +91,6 @@ class Test_BU_Versions_Meta extends WP_UnitTestCase {
 		$this->assertEquals($new_meta, $preview_meta);
 	}
 
-
-	function awesome_foo_alt_versions($features) {
-		$features['awesome_foo'] = array(
-			$this->meta_key
-		);
-		return $features;
-	}
 
 	function save_post_handler($post_id, $post) {
 		if ($post->post_type == 'revision') {
