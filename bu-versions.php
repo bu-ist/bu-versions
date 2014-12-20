@@ -143,10 +143,11 @@ class BU_Version_Admin {
 		foreach( $v_type_managers as $type => $manager ) {
 			$original_post_type = $manager->get_orig_post_type();
 			$post_type_obj = get_post_type_object( $type );
+			$capability = $post_type_obj->cap->edit_posts;
 			if( $original_post_type === 'post' ) {
-				add_submenu_page( 'edit.php', null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php', null, $post_type_obj->labels->name, $capability, 'edit.php?post_type=' . $type);
 			} else {
-				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, $post_type_obj->labels->name, 'edit_pages', 'edit.php?post_type=' . $type);
+				add_submenu_page( 'edit.php?post_type=' . $original_post_type, null, $post_type_obj->labels->name, $capability, 'edit.php?post_type=' . $type);
 			}
 		}
 		add_submenu_page(null, null, null, 'read', 'bu_create_version', array('BU_Version_Controller', 'create_version_view'));
