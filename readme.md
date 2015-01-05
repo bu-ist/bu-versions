@@ -2,8 +2,8 @@
 **Contributors:** gcorne, mgburns
 **Tags:** content editing, workflow, version, merge, boston university, bu
 **Requires at least:** 3.1
-**Tested up to:** 3.8
-**Stable tag:** 0.7.3
+**Tested up to:** 4.1
+**Stable tag:** 0.7.4
 **License:** GPLv2 or later
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,14 @@ Please see our Github wiki page to learn [how to register alternate version supp
 
 
 ## Changelog ##
+
+### 0.7.4 ###
+
+* Fixed issue causing some changes to be lost when replacing original post
+* Switch to post-type specific capabilities for alternate version admin menus
+* Updated unit tests to work with current test suite using WP CLI test scaffolding
+* Added TravisCI integration
+* Minor cleanup
 
 ### 0.7.3 ###
 
