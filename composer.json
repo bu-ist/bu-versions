@@ -1,0 +1,19 @@
+{
+    "name": "bu-ist/bu-versions",
+    "description": "Make and review edits to published content",
+    "license": "GPLv2",
+    "authors": [
+        {
+            "name": "Gregory Cornelius",
+            "email": "gcorne@gmail.com"
+        },
+        {
+            "name": "Mike Burns",
+            "email": "mgburns@bu.edu"
+        }
+    ],
+    "require": {},
+    "require-dev": {
+        "phpunit/phpunit": "4.3.*"
+    }
+}
