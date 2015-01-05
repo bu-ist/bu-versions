@@ -37,8 +37,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
  * @todo split into multiple files
- * @todo verify presence of alternate version when loading original to fix orphans.
- * @todo transition post status comes before save_post -- switching page template in alt. version and immediately hitting "Replace Original" does not work
  **/
 
 class BU_Version_Workflow {
