@@ -61,6 +61,36 @@ class Test_BU_Versions extends WP_UnitTestCase {
 
 	}
 
+	/**
+	 * Demonstrates a bug that showed up in 4.0 due to a logic
+	 * check added to `redirect_canonical`.
+	 *
+	 * The end result was that the preview link for alternate versions
+	 * of the front page was breaking.
+	 */
+	function test_preview_version() {
+		list($original_post, $alt_version) = $this->create_version();
+		$version = new BU_Version;
+		$version->get( $alt_version->ID );
+
+		update_option('show_on_front', 'page');
+		update_option('page_on_front', $original_post->ID);
+
+		// Hack to ensure our custom query variable persists the cleanup
+		// implicit in `$this->go_to()`
+		add_filter( 'query_vars', function ( $vars ) {
+			$vars[] = 'version_id';
+			return $vars;
+		} );
+
+		$this->go_to( $version->get_preview_URL() );
+
+		$redirect_url = @redirect_canonical( $version->get_preview_URL(), false );
+
+		$this->assertFalse( $redirect_url );
+	}
+
+
 	function create_version() {
 		$post_id = $this->insert_post('page');
 
