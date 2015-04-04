@@ -5,7 +5,7 @@ Plugin URI: http://developer.bu.edu/bu-versions/
 Author: Boston University (IS&T)
 Author URI: http://sites.bu.edu/web/
 Description: Make and review edits to published content.
-Version: 0.7.4
+Version: 0.7.5
 Text Domain: bu-versions
 Domain Path: /languages
 */
@@ -45,7 +45,7 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
-	const version = '0.7.4';
+	const version = '0.7.5';
 
 	static function init() {
 
@@ -765,6 +765,12 @@ class BU_Version_Controller {
 		$post->post_content = $preview->post_content;
 		$post->post_title = $preview->post_title;
 		$post->post_excerpt = $preview->post_excerpt;
+
+		// Workaround for `redirect_canonical` logic added in 4.0
+		// See https://core.trac.wordpress.org/changeset/28874
+		if ( 'page' === get_option( 'show_on_front' ) && $post->ID == get_option( 'page_on_front' ) ) {
+			add_filter( 'redirect_canonical', '__return_false' );
+		}
 
 		return $post;
 
