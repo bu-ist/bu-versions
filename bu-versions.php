@@ -766,6 +766,12 @@ class BU_Version_Controller {
 		$post->post_title = $preview->post_title;
 		$post->post_excerpt = $preview->post_excerpt;
 
+		// Workaround for `redirect_canonical` logic added in 4.0
+		// See https://core.trac.wordpress.org/changeset/28874
+		if ( 'page' === get_option( 'show_on_front' ) && $post->ID == get_option( 'page_on_front' ) ) {
+			add_filter( 'redirect_canonical', '__return_false' );
+		}
+
 		return $post;
 
 	}
