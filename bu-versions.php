@@ -70,7 +70,7 @@ class BU_Version_Workflow {
 			add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 31 );
 		}
 
-		add_action( 'map_meta_cap', array( self::$controller, 'map_meta_cap' ), 20, 4 );
+		add_filter( 'map_meta_cap', array( self::$controller, 'map_meta_cap' ), 20, 4 );
 
 		// is this necessary?
 		add_rewrite_tag( '%version_id%', '[^&]+' );
@@ -862,13 +862,14 @@ class BU_Version_Controller {
 
 			$wp_admin_bar->remove_menu('edit');
 
-			// in this case we don't want to override the edit links
-			remove_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
+			// Temporarily remove filters that interfere with generating "Edit" menu items
+			remove_filter( 'get_edit_post_link', array( $this, 'override_edit_post_link' ), 10, 3 );
+			remove_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 20, 4 );
 
 			if ( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
 				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label', 'bu-versions'), 'href' => get_edit_post_link( $current_object->ID ) ) );
 
-				if ( $version->original->ID != $current_object->ID && current_user_can( 'edit_post', $version->original->ID ) ) {
+				if ( $version->original->ID != $current_object->ID && current_user_can( $original_post_type->cap->edit_post, $version->original->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
 				}
 
@@ -880,7 +881,8 @@ class BU_Version_Controller {
 					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
 			}
 
-			add_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
+			add_filter( 'get_edit_post_link', array( $this, 'override_edit_post_link' ), 10, 3 );
+			add_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 20, 4 );
 		}
 	}
 
