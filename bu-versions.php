@@ -192,8 +192,11 @@ class BU_Version_Admin {
 						$label = $original->labels->singular_name;
 						$label[0] = strtolower($label[0]);
 					}
-					$edit_link = sprintf('<a href="%s" target="_blank">%s %s</a>', $version->get_original_edit_url(), __('original', 'bu-versions' ), $label);
-					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', 'bu-versions' ), $label, $edit_link);
+					$original_link = $label;
+					if ( current_user_can( $original->cap->edit_post, $version->original->ID ) ) {
+						$original_link = sprintf('<a href="%s" target="_blank">%s %s</a>', $version->get_original_edit_url(), __('original', 'bu-versions' ), $label);
+					}
+					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', 'bu-versions' ), $label, $original_link);
 					printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 				} else {
 					$pto = get_post_type_object($post->post_type);
