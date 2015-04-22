@@ -1,149 +1,149 @@
-# Copyright (C) 2013 BU Versions
+# Copyright (C) 2015 BU Versions
 # This file is distributed under the same license as the BU Versions package.
 msgid ""
 msgstr ""
-"Project-Id-Version: BU Versions 0.7.3\n"
-"Report-Msgid-Bugs-To: http://wordpress.org/tag/bu-versions\n"
-"POT-Creation-Date: 2013-12-15 23:53:43+00:00\n"
+"Project-Id-Version: BU Versions 0.7.6\n"
+"Report-Msgid-Bugs-To: http://wordpress.org/support/plugin/bu-versions\n"
+"POT-Creation-Date: 2015-04-22 07:31:10+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2013-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2015-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 
-#: bu-versions.php:125
+#: bu-versions.php:123
 msgid "Replace Original"
 msgstr ""
 
-#: bu-versions.php:196
+#: bu-versions.php:197
 msgid "original"
 msgstr ""
 
-#: bu-versions.php:197
+#: bu-versions.php:199
 msgid ""
 "This is a clone of an existing %s and will replace the %s when published."
 msgstr ""
 
-#: bu-versions.php:210
+#: bu-versions.php:212
 msgid "Edit"
 msgstr ""
 
-#: bu-versions.php:211
+#: bu-versions.php:213
 msgid "There is an alternate version for this %s. %s"
 msgstr ""
 
-#: bu-versions.php:220
+#: bu-versions.php:222
 msgid ""
 "The alternate version has replaced the data of this %s and been deleted."
 msgstr ""
 
-#: bu-versions.php:259
+#: bu-versions.php:261
 msgid "Page Attributes"
 msgstr ""
 
-#: bu-versions.php:320
+#: bu-versions.php:322
 msgctxt "post type general name"
 msgid "Alternate Versions"
 msgstr ""
 
-#: bu-versions.php:321
+#: bu-versions.php:323
 msgctxt "post type singular name"
 msgid "Alternate Version"
 msgstr ""
 
-#: bu-versions.php:323
+#: bu-versions.php:325
 msgid "Add New Version"
 msgstr ""
 
-#: bu-versions.php:324 bu-versions.php:854 bu-versions.php:858
+#: bu-versions.php:326 bu-versions.php:880 bu-versions.php:884
 msgid "Edit Alternate Version"
 msgstr ""
 
-#: bu-versions.php:325
+#: bu-versions.php:327
 msgid "New"
 msgstr ""
 
-#: bu-versions.php:326
+#: bu-versions.php:328
 msgid "View Alternate Version"
 msgstr ""
 
-#: bu-versions.php:327
+#: bu-versions.php:329
 msgid "Search Alternate Versions"
 msgstr ""
 
-#: bu-versions.php:328
+#: bu-versions.php:330
 msgid "No Alternate Versions found"
 msgstr ""
 
-#: bu-versions.php:329
+#: bu-versions.php:331
 msgid "No Alternate Versions found in Trash"
 msgstr ""
 
-#: bu-versions.php:400
+#: bu-versions.php:402
 msgctxt "post type general name"
 msgid "Alternate %s"
 msgstr ""
 
-#: bu-versions.php:401
+#: bu-versions.php:403
 msgctxt "post type singular name"
 msgid "Alternate %s"
 msgstr ""
 
-#: bu-versions.php:621
+#: bu-versions.php:623
 msgid "edit version"
 msgstr ""
 
-#: bu-versions.php:622
+#: bu-versions.php:624
 msgid "Edit this item"
 msgstr ""
 
-#: bu-versions.php:626
+#: bu-versions.php:628
 msgid "create clone"
 msgstr ""
 
-#: bu-versions.php:627
+#: bu-versions.php:629
 msgid "Create alternate version of this item"
 msgstr ""
 
-#: bu-versions.php:763
+#: bu-versions.php:788
 msgid "The post to be cloned could not be found."
 msgstr ""
 
-#: bu-versions.php:770
+#: bu-versions.php:795
 msgid "You do not have permission to create an alternate version of this post."
 msgstr ""
 
-#: bu-versions.php:779
+#: bu-versions.php:804
 msgid "The alternate version could not be created. "
 msgstr ""
 
-#: bu-versions.php:847
+#: bu-versions.php:873
 msgctxt "admin bar menu group label"
 msgid "Edit"
 msgstr ""
 
-#: bu-versions.php:850
+#: bu-versions.php:876
 msgid "Edit Original"
 msgstr ""
 
-#: bu-versions.php:949
+#: bu-versions.php:976
 msgid "An alternate version already exists for this post."
 msgstr ""
 
-#: bu-versions.php:954
+#: bu-versions.php:981
 msgid "The post ID: %s could not be found."
 msgstr ""
 
-#: bu-versions.php:977
+#: bu-versions.php:1004
 msgid "Version post insertion failed."
 msgstr ""
 
-#: bu-versions.php:1004
+#: bu-versions.php:1031
 msgid "Invalid alternate version."
 msgstr ""
 
-#: bu-versions.php:1024
+#: bu-versions.php:1051
 msgid "Original post update failed."
 msgstr ""
 
