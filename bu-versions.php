@@ -5,7 +5,7 @@ Plugin URI: http://developer.bu.edu/bu-versions/
 Author: Boston University (IS&T)
 Author URI: http://sites.bu.edu/web/
 Description: Make and review edits to published content.
-Version: 0.7.5
+Version: 0.7.6
 Text Domain: bu-versions
 Domain Path: /languages
 */
@@ -45,7 +45,7 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
-	const version = '0.7.5';
+	const version = '0.7.6';
 
 	static function init() {
 
@@ -70,7 +70,7 @@ class BU_Version_Workflow {
 			add_action( 'admin_bar_menu', array( self::$controller, 'admin_bar_menu' ), 31 );
 		}
 
-		add_action( 'map_meta_cap', array( self::$controller, 'map_meta_cap' ), 20, 4 );
+		add_filter( 'map_meta_cap', array( self::$controller, 'map_meta_cap' ), 20, 4 );
 
 		// is this necessary?
 		add_rewrite_tag( '%version_id%', '[^&]+' );
@@ -192,8 +192,11 @@ class BU_Version_Admin {
 						$label = $original->labels->singular_name;
 						$label[0] = strtolower($label[0]);
 					}
-					$edit_link = sprintf('<a href="%s" target="_blank">%s %s</a>', $version->get_original_edit_url(), __('original', 'bu-versions' ), $label);
-					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', 'bu-versions' ), $label, $edit_link);
+					$original_link = $label;
+					if ( current_user_can( $original->cap->edit_post, $version->original->ID ) ) {
+						$original_link = sprintf('<a href="%s" target="_blank">%s %s</a>', $version->get_original_edit_url(), __('original', 'bu-versions' ), $label);
+					}
+					$notice = sprintf(__('This is a clone of an existing %s and will replace the %s when published.', 'bu-versions' ), $label, $original_link);
 					printf('<div class="updated bu-version-notice"><p>%s</p></div>', $notice);
 				} else {
 					$pto = get_post_type_object($post->post_type);
@@ -653,7 +656,7 @@ class BU_Version_Controller {
 		return $caps;
 	}
 
-	function get_URL($post) {
+	static function get_URL($post) {
 		$url = 'admin.php?page=bu_create_version';
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
 		return wp_nonce_url($url, 'create_version');
@@ -862,13 +865,14 @@ class BU_Version_Controller {
 
 			$wp_admin_bar->remove_menu('edit');
 
-			// in this case we don't want to override the edit links
-			remove_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
+			// Temporarily remove filters that interfere with generating "Edit" menu items
+			remove_filter( 'get_edit_post_link', array( $this, 'override_edit_post_link' ), 10, 3 );
+			remove_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 20, 4 );
 
 			if ( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
 				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label', 'bu-versions'), 'href' => get_edit_post_link( $current_object->ID ) ) );
 
-				if ( $version->original->ID != $current_object->ID && current_user_can( 'edit_post', $version->original->ID ) ) {
+				if ( $version->original->ID != $current_object->ID && current_user_can( $original_post_type->cap->edit_post, $version->original->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
 				}
 
@@ -880,7 +884,8 @@ class BU_Version_Controller {
 					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
 			}
 
-			add_filter('get_edit_post_link', array($this, 'override_edit_post_link'), 10, 3);
+			add_filter( 'get_edit_post_link', array( $this, 'override_edit_post_link' ), 10, 3 );
+			add_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 20, 4 );
 		}
 	}
 

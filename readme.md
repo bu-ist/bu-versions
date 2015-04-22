@@ -2,8 +2,8 @@
 **Contributors:** gcorne, mgburns
 **Tags:** content editing, workflow, version, merge, boston university, bu
 **Requires at least:** 3.1
-**Tested up to:** 4.1
-**Stable tag:** 0.7.5
+**Tested up to:** 4.2
+**Stable tag:** 0.7.6
 **License:** GPLv2 or later
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -66,8 +66,12 @@ Please see our Github wiki page to learn [how to register alternate version supp
 ###5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end###
 ![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-5.png)
 
-
 ## Changelog ##
+
+### 0.7.6 ###
+
+* Confirmed 4.2 compatibility
+* Stop showing edit links for original post when current user can't edit them
 
 ### 0.7.5 ###
 
