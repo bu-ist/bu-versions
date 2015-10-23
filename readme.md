@@ -1,11 +1,20 @@
 # BU Versions #
+
 **Contributors:** gcorne, mgburns
+
 **Tags:** content editing, workflow, version, merge, boston university, bu
+
 **Requires at least:** 3.1
+
 **Tested up to:** 4.2
+
 **Stable tag:** 0.7.6
+
 **License:** GPLv2 or later
+
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html
+
+[![Build Status](https://travis-ci.org/bu-ist/bu-versions.svg?branch=master)](https://travis-ci.org/bu-ist/bu-versions)
 
 Make and save edits to published posts/pages in WordPress without immediately replacing the public content.
 
@@ -52,19 +61,19 @@ Please see our Github wiki page to learn [how to register alternate version supp
 ## Screenshots ##
 
 ###1. Create alternate versions from the posts table using the “create clone” button###
-![Create alternate versions from the posts table using the “create clone” button](https://ps.w.org/bu-versions/assets/screenshot-1.png?rev=680875)
+![Create alternate versions from the posts table using the “create clone” button](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-1.png)
 
 ###2. Easily see which posts have alternate versions in progress from the posts table###
-![Easily see which posts have alternate versions in progress from the posts table](https://ps.w.org/bu-versions/assets/screenshot-2.png?rev=680875)
+![Easily see which posts have alternate versions in progress from the posts table](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-2.png)
 
 ###3. Admin notices help you keep track of which version of a post you are currently editing###
-![Admin notices help you keep track of which version of a post you are currently editing](https://ps.w.org/bu-versions/assets/screenshot-3.png?rev=680875)
+![Admin notices help you keep track of which version of a post you are currently editing](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-3.png)
 
 ###4. One click replacement of original post with alternate version content###
-![One click replacement of original post with alternate version content](https://ps.w.org/bu-versions/assets/screenshot-4.png?rev=680875)
+![One click replacement of original post with alternate version content](http://developer.bu.edu/bu-versions/files/2015/10/screenshot-4.png)
 
 ###5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end###
-![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](https://ps.w.org/bu-versions/assets/screenshot-5.png?rev=680875)
+![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-5.png)
 
 ## Changelog ##
 
