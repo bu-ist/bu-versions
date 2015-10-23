@@ -436,7 +436,7 @@ class BU_VPost_Factory {
 				}
 			}
 
-			$v_post_type = apply_filters( 'bu_alt_versions_post_type_name', $alt_name . '_alt', $type );
+			$v_post_type = apply_filters( 'bu_alt_versions_post_type_alt_name', $alt_name . '_alt', $type );
 			$register = register_post_type($v_post_type, $args);
 			if(!is_wp_error($register)) {
 				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args, $meta_keys);

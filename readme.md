@@ -80,6 +80,7 @@ Please see our Github wiki page to learn [how to register alternate version supp
 ### 0.7.7 ###
 
 * Bugfix for post types with long names
+* Adds `bu_alt_versions_post_type_alt_name` filter, allowing the alt post type name to be customized 
 
 ### 0.7.6 ###
 
