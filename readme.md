@@ -1,14 +1,14 @@
 # BU Versions #
 
-**Contributors:** gcorne, mgburns
+**Contributors:** gcorne, mgburns, awbauer
 
 **Tags:** content editing, workflow, version, merge, boston university, bu
 
 **Requires at least:** 3.1
 
-**Tested up to:** 4.2
+**Tested up to:** 4.3
 
-**Stable tag:** 0.7.6
+**Stable tag:** 0.7.7
 
 **License:** GPLv2 or later
 
