@@ -14,7 +14,7 @@
 
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html
 
-[![Build Status](https://travis-ci.org/bu-ist/bu-versions.svg?branch=master)](https://travis-ci.org/bu-ist/bu-versions)
+[![Build Status](https://travis-ci.org/bu-ist/bu-versions.svg)](https://travis-ci.org/bu-ist/bu-versions)
 
 Make and save edits to published posts/pages in WordPress without immediately replacing the public content.
 
