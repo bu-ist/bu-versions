@@ -15,6 +15,15 @@ class Test_BU_Versions extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	function test_long_post_type(){
+		$this->assertTrue( post_type_exists( '1suuuuperlongp_alt' ) );
+	}
+
+	function test_conflicting_long_post_types(){
+		$this->assertTrue( post_type_exists( '2suuuuperlongp1_alt' ) );
+
+	}
+
 	function test_create_version() {
 		list($original_post, $version_post) = $this->create_version();
 
@@ -87,7 +96,8 @@ class Test_BU_Versions extends WP_UnitTestCase {
 
 		$redirect_url = @redirect_canonical( $version->get_preview_URL(), false );
 
-		if ( version_compare( $GLOBALS['wp_version'], '4.0', '>=' ) ) {
+		if ( version_compare( $GLOBALS['wp_version'], '4.0', '>=' ) && version_compare( $GLOBALS['wp_version'], '4.2.3', '<=' )) {
+			// bug from v4.0 => v4.2.3
 			$this->assertFalse( $redirect_url );
 		} else {
 			$this->assertNull( $redirect_url );

@@ -19,5 +19,12 @@ function _manually_load_plugin() {
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
+function _load_post_types(){
+	register_post_type( '1suuuuperlongpostype', array( 'show_ui' => true ) );
+	register_post_type( '2suuuuperlongpostype', array( 'show_ui' => true ) );
+	register_post_type( '2suuuuperlongp' );
+}
+tests_add_filter( 'init', '_load_post_types' );
+
 require $_tests_dir . '/includes/bootstrap.php';
 

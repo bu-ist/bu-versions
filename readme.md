@@ -1,11 +1,20 @@
 # BU Versions #
-**Contributors:** gcorne, mgburns
+
+**Contributors:** gcorne, mgburns, awbauer
+
 **Tags:** content editing, workflow, version, merge, boston university, bu
+
 **Requires at least:** 3.1
-**Tested up to:** 4.2
-**Stable tag:** 0.7.6
+
+**Tested up to:** 4.3
+
+**Stable tag:** 0.7.7
+
 **License:** GPLv2 or later
+
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html
+
+[![Build Status](https://travis-ci.org/bu-ist/bu-versions.svg)](https://travis-ci.org/bu-ist/bu-versions)
 
 Make and save edits to published posts/pages in WordPress without immediately replacing the public content.
 
@@ -52,21 +61,26 @@ Please see our Github wiki page to learn [how to register alternate version supp
 ## Screenshots ##
 
 ###1. Create alternate versions from the posts table using the “create clone” button###
-![Create alternate versions from the posts table using the “create clone” button](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-1.png)
+![Create alternate versions from the posts table using the “create clone” button](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-1.png)
 
 ###2. Easily see which posts have alternate versions in progress from the posts table###
-![Easily see which posts have alternate versions in progress from the posts table](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-2.png)
+![Easily see which posts have alternate versions in progress from the posts table](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-2.png)
 
 ###3. Admin notices help you keep track of which version of a post you are currently editing###
-![Admin notices help you keep track of which version of a post you are currently editing](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-3.png)
+![Admin notices help you keep track of which version of a post you are currently editing](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-3.png)
 
 ###4. One click replacement of original post with alternate version content###
-![One click replacement of original post with alternate version content](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-4.png)
+![One click replacement of original post with alternate version content](http://developer.bu.edu/bu-versions/files/2015/10/screenshot-4.png)
 
 ###5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end###
-![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-5.png)
+![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://developer.bu.edu/bu-versions/files/2013/02/screenshot-5.png)
 
 ## Changelog ##
+
+### 0.7.7 ###
+
+* Bugfix for post types with long names
+* Adds `bu_alt_versions_post_type_alt_name` filter, allowing the alt post type name to be customized 
 
 ### 0.7.6 ###
 

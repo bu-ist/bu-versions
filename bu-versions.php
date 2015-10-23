@@ -311,6 +311,15 @@ class BU_VPost_Factory {
 		$this->v_post_types = array();
 	}
 
+	function increment_post_type_name( $name ) {
+		$inc = 1;
+		while ( post_type_exists( $name ) ) {
+			$name = sprintf( '%s%d', $name, $inc );
+			$inc++;
+		}
+		return $name;
+	}
+
 	/**
 	 * Registers an "alt" post type for each post_type that has show_ui enabled.
 	 *
@@ -418,8 +427,16 @@ class BU_VPost_Factory {
 				$meta_keys[] = '_wp_page_template';
 			}
 
-			$v_post_type = $type->name . '_alt';
+			$alt_name = $type->name;
 
+			if ( strlen( $alt_name ) > 16 ) {
+				$alt_name = substr($type->name, 0, 14); // 14 chars + up to 2 for increment + 4 for '_alt' = 20 char limit
+				if ( post_type_exists( $alt_name ) ) {
+					$alt_name = self::increment_post_type_name( $alt_name );
+				}
+			}
+
+			$v_post_type = apply_filters( 'bu_alt_versions_post_type_alt_name', $alt_name . '_alt', $type );
 			$register = register_post_type($v_post_type, $args);
 			if(!is_wp_error($register)) {
 				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args, $meta_keys);
