@@ -96,7 +96,8 @@ class Test_BU_Versions extends WP_UnitTestCase {
 
 		$redirect_url = @redirect_canonical( $version->get_preview_URL(), false );
 
-		if ( version_compare( $GLOBALS['wp_version'], '4.0', '>=' ) ) {
+		if ( version_compare( $GLOBALS['wp_version'], '4.0', '>=' ) && version_compare( $GLOBALS['wp_version'], '4.2.3', '<=' )) {
+			// bug from v4.0 => v4.2.3
 			$this->assertFalse( $redirect_url );
 		} else {
 			$this->assertNull( $redirect_url );
