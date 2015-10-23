@@ -10,6 +10,10 @@
         {
             "name": "Mike Burns",
             "email": "mgburns@bu.edu"
+        },
+        {
+            "name": "Andrew Bauer",
+            "email": "awbauer@bu.edu"
         }
     ],
     "require": {},
