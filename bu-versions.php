@@ -312,9 +312,12 @@ class BU_VPost_Factory {
 	}
 
 	function increment_post_type_name( $name ){
-		static $increment = 0;
-		$increment++;
-		return sprintf( '%s%d', $name, $increment );
+		$inc = 1;
+		while( post_type_exists( $name ) ){
+			$name = sprintf( '%s%d', $name, $inc );
+			$inc++;
+		}
+		return $name;
 	}
 
 	/**
@@ -428,7 +431,7 @@ class BU_VPost_Factory {
 
 			if( strlen( $alt_name ) > 15 ){
 				$alt_name = substr($type->name, 0, 14); // 14 chars + up to 2 for increment + 4 for '_alt' = 20 char limit
-				while ( post_type_exists( $alt_name ) ) {
+				if( post_type_exists( $alt_name ) ){
 					$alt_name = self::increment_post_type_name( $alt_name );
 				}
 			}
