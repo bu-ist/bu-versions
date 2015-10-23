@@ -52,21 +52,25 @@ Please see our Github wiki page to learn [how to register alternate version supp
 ## Screenshots ##
 
 ###1. Create alternate versions from the posts table using the “create clone” button###
-![Create alternate versions from the posts table using the “create clone” button](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-1.png)
+![Create alternate versions from the posts table using the “create clone” button](https://ps.w.org/bu-versions/assets/screenshot-1.png?rev=680875)
 
 ###2. Easily see which posts have alternate versions in progress from the posts table###
-![Easily see which posts have alternate versions in progress from the posts table](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-2.png)
+![Easily see which posts have alternate versions in progress from the posts table](https://ps.w.org/bu-versions/assets/screenshot-2.png?rev=680875)
 
 ###3. Admin notices help you keep track of which version of a post you are currently editing###
-![Admin notices help you keep track of which version of a post you are currently editing](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-3.png)
+![Admin notices help you keep track of which version of a post you are currently editing](https://ps.w.org/bu-versions/assets/screenshot-3.png?rev=680875)
 
 ###4. One click replacement of original post with alternate version content###
-![One click replacement of original post with alternate version content](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-4.png)
+![One click replacement of original post with alternate version content](https://ps.w.org/bu-versions/assets/screenshot-4.png?rev=680875)
 
 ###5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end###
-![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](http://s.wordpress.org/extend/plugins/bu-versions/screenshot-5.png)
+![Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end](https://ps.w.org/bu-versions/assets/screenshot-5.png?rev=680875)
 
 ## Changelog ##
+
+### 0.7.7 ###
+
+* Bugfix for post types with long names
 
 ### 0.7.6 ###
 

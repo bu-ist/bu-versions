@@ -311,6 +311,12 @@ class BU_VPost_Factory {
 		$this->v_post_types = array();
 	}
 
+	function increment_post_type_name( $name ){
+		static $increment = 0;
+		$increment++;
+		return sprintf( '%s%d', $name, $increment );
+	}
+
 	/**
 	 * Registers an "alt" post type for each post_type that has show_ui enabled.
 	 *
@@ -356,6 +362,45 @@ class BU_VPost_Factory {
 			'public' => true
 		);
 
+		register_post_type( 'suuuuperlongpostype', array(
+			'labels' =>  array(
+				'name' => _x('Alternate Versions', 'post type general name', 'bu-versions'),
+				'singular_name' => _x('Alternate Version', 'post type singular name', 'bu-versions'),
+				'add_new' => _x('Add New', '', 'bu-versions'),
+				'add_new_item' => __('Add New Version', 'bu-versions'),
+				'edit_item' => __('Edit Alternate Version', 'bu-versions'),
+				'new_item' => __('New', 'bu-versions'),
+				'view_item' => __('View Alternate Version', 'bu-versions'),
+				'search_items' => __('Search Alternate Versions', 'bu-versions'),
+				'not_found' =>  __('No Alternate Versions found', 'bu-versions'),
+				'not_found_in_trash' => __('No Alternate Versions found in Trash', 'bu-versions'),
+				'parent_item_colon' => '',
+				'menu_name' => 'Alternate Versions'
+			),
+			'description' => '',
+			'publicly_queryable' => true,
+			'exclude_from_search' => true,
+			'map_meta_cap' => true,
+			'hierarchical' => false,
+			'rewrite' => false,
+			'has_archive' => false,
+			'query_var' => true,
+			'supports' => array('editor', 'title', 'author', 'revisions' ), // copy support from the post_type
+			'taxonomies' => array(),
+			'show_ui' => true,
+			'show_in_menu' => true,
+			// 'menu_position' => null,
+			// 'menu_icon' => null,
+			// 'permalink_epmask' => EP_PERMALINK,
+			'can_export' => true,
+			'show_in_nav_menus' => false,
+			'show_in_menu' => true,
+			'public' => true
+		) );
+
+// register_post_type( 'suuuuperlongpo' );
+// register_post_type( 'suuuuperlongpos' );
+
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
 
 		$alt_supported_features = array(
@@ -376,7 +421,7 @@ class BU_VPost_Factory {
 		// plugins/themes can add support for particular features by filtering
 		// the array of supported features
 		$alt_supported_features = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
-
+		
 		foreach($post_types as $type) {
 
 			$should_register = true;
@@ -418,8 +463,16 @@ class BU_VPost_Factory {
 				$meta_keys[] = '_wp_page_template';
 			}
 
-			$v_post_type = $type->name . '_alt';
+			$alt_name = $type->name;
 
+			if( strlen( $alt_name ) > 15 ){
+				$alt_name = substr($type->name, 0, 14); // 14 chars + up to 2 for increment + 4 for '_alt' = 20 char limit
+				while ( post_type_exists( $alt_name ) ) {
+					$alt_name = self::increment_post_type_name( $alt_name );
+				}
+			}
+
+			$v_post_type = $alt_name . '_alt';
 			$register = register_post_type($v_post_type, $args);
 			if(!is_wp_error($register)) {
 				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args, $meta_keys);

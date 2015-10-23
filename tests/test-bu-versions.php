@@ -15,6 +15,18 @@ class Test_BU_Versions extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	function test_long_post_type(){
+		register_post_type( 'suuuuperlongpostype', array( 'show_ui' => true ) );
+		$this->assertTrue( post_type_exists( 'suuuuperlongpo_alt' ) );
+	}
+
+	function test_conflicting_long_post_types(){
+		register_post_type( 'suuuuperlongpostype', array( 'show_ui' => true ) );
+		register_post_type( 'suuuuperlongpo' );
+		$this->assertTrue( post_type_exists( 'suuuuperlongpo1_alt' ) );
+
+	}
+
 	function test_create_version() {
 		list($original_post, $version_post) = $this->create_version();
 
