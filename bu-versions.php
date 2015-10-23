@@ -362,45 +362,6 @@ class BU_VPost_Factory {
 			'public' => true
 		);
 
-		register_post_type( 'suuuuperlongpostype', array(
-			'labels' =>  array(
-				'name' => _x('Alternate Versions', 'post type general name', 'bu-versions'),
-				'singular_name' => _x('Alternate Version', 'post type singular name', 'bu-versions'),
-				'add_new' => _x('Add New', '', 'bu-versions'),
-				'add_new_item' => __('Add New Version', 'bu-versions'),
-				'edit_item' => __('Edit Alternate Version', 'bu-versions'),
-				'new_item' => __('New', 'bu-versions'),
-				'view_item' => __('View Alternate Version', 'bu-versions'),
-				'search_items' => __('Search Alternate Versions', 'bu-versions'),
-				'not_found' =>  __('No Alternate Versions found', 'bu-versions'),
-				'not_found_in_trash' => __('No Alternate Versions found in Trash', 'bu-versions'),
-				'parent_item_colon' => '',
-				'menu_name' => 'Alternate Versions'
-			),
-			'description' => '',
-			'publicly_queryable' => true,
-			'exclude_from_search' => true,
-			'map_meta_cap' => true,
-			'hierarchical' => false,
-			'rewrite' => false,
-			'has_archive' => false,
-			'query_var' => true,
-			'supports' => array('editor', 'title', 'author', 'revisions' ), // copy support from the post_type
-			'taxonomies' => array(),
-			'show_ui' => true,
-			'show_in_menu' => true,
-			// 'menu_position' => null,
-			// 'menu_icon' => null,
-			// 'permalink_epmask' => EP_PERMALINK,
-			'can_export' => true,
-			'show_in_nav_menus' => false,
-			'show_in_menu' => true,
-			'public' => true
-		) );
-
-// register_post_type( 'suuuuperlongpo' );
-// register_post_type( 'suuuuperlongpos' );
-
 		$post_types = get_post_types(array('show_ui' => true), 'objects');
 
 		$alt_supported_features = array(
@@ -421,7 +382,7 @@ class BU_VPost_Factory {
 		// plugins/themes can add support for particular features by filtering
 		// the array of supported features
 		$alt_supported_features = apply_filters('bu_alt_versions_feature_support', $alt_supported_features);
-		
+
 		foreach($post_types as $type) {
 
 			$should_register = true;
