@@ -429,14 +429,14 @@ class BU_VPost_Factory {
 
 			$alt_name = $type->name;
 
-			if ( strlen( $alt_name ) > 15 ) {
+			if ( strlen( $alt_name ) > 16 ) {
 				$alt_name = substr($type->name, 0, 14); // 14 chars + up to 2 for increment + 4 for '_alt' = 20 char limit
 				if ( post_type_exists( $alt_name ) ) {
 					$alt_name = self::increment_post_type_name( $alt_name );
 				}
 			}
 
-			$v_post_type = $alt_name . '_alt';
+			$v_post_type = apply_filters( 'bu_alt_versions_post_type_name', $alt_name . '_alt', $type );
 			$register = register_post_type($v_post_type, $args);
 			if(!is_wp_error($register)) {
 				$this->v_post_types[$v_post_type] = new BU_Version_Manager($type->name, $v_post_type, $args, $meta_keys);
