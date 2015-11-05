@@ -5,7 +5,7 @@ Plugin URI: http://developer.bu.edu/bu-versions/
 Author: Boston University (IS&T)
 Author URI: http://sites.bu.edu/web/
 Description: Make and review edits to published content.
-Version: 0.7.6
+Version: 0.7.7
 Text Domain: bu-versions
 Domain Path: /languages
 */
@@ -45,7 +45,7 @@ class BU_Version_Workflow {
 	public static $controller;
 	public static $admin;
 
-	const version = '0.7.6';
+	const version = '0.7.7';
 
 	static function init() {
 
