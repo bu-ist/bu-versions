@@ -39,13 +39,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * @todo split into multiple files
  **/
 
+require_once __DIR__ . '/inc/class-bu-version-import.php';
+
 class BU_Version_Workflow {
 
 	public static $v_factory;
 	public static $controller;
 	public static $admin;
+	public static $import;
 
 	const version = '0.7.7';
+	const version_meta = '_bu_version';
 
 	static function init() {
 
@@ -81,6 +85,11 @@ class BU_Version_Workflow {
 			self::$admin->bind_hooks();
 			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
 			add_filter( 'redirect_post_location', array( self::$controller, 'published_version_redirect_loc' ), 10, 2 );
+		}
+
+		if ( class_exists( 'WP_Import' ) || class_exists( 'WXR_Importer' ) ) {
+			self::$import = new BU_Version_Import( self::$v_factory );
+			self::$import->bind_hooks();
 		}
 
 		add_action( 'shutdown', array( self::$controller, 'shutdown_handler' ) );
