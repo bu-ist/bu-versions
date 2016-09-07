@@ -80,10 +80,10 @@ class BU_Version_Workflow {
 		add_rewrite_tag( '%version_id%', '[^&]+' );
 		add_filter( 'get_edit_post_link', array( self::$controller, 'override_edit_post_link' ), 10, 3 );
 
-		if (is_admin() ) {
+		if ( is_admin() ) {
 			self::$admin = new BU_Version_Admin( self::$v_factory );
 			self::$admin->bind_hooks();
-			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
+			add_action( 'load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
 			add_filter( 'redirect_post_location', array( self::$controller, 'published_version_redirect_loc' ), 10, 2 );
 		}
 
@@ -183,7 +183,6 @@ class BU_Version_Admin {
 	function admin_notices() {
 		global $current_screen;
 		global $post_ID;
-
 
 		if($current_screen->base == 'post') {
 
@@ -530,15 +529,15 @@ class BU_Version_Manager {
 	}
 
 	function publish($post_id) {
-			$version = new BU_Version();
-			$version->get($post_id);
+		$version = new BU_Version();
+		$version->get($post_id);
 
-			$result =  $version->publish( $this->meta_keys );
-			if( $result && ! is_wp_error( $result ) ) {
-				return $version;
-			} else {
-				return $result;
-			}
+		$result =  $version->publish( $this->meta_keys );
+		if( $result && ! is_wp_error( $result ) ) {
+			return $version;
+		} else {
+			return $result;
+		}
 	}
 
 	function get_orig_post_type() {
@@ -641,7 +640,7 @@ class BU_Version_Manager_Admin {
 
 	function orig_column($column_name, $post_id) {
 		if($column_name != 'alternate_versions') return;
-		$version_id = get_post_meta($post_id, '_bu_version', true);
+		$version_id = get_post_meta($post_id, BU_Version_Workflow::version_meta, true);
 		if(!empty($version_id)) {
 			$version = new BU_Version();
 			$version->get($version_id);
@@ -928,7 +927,6 @@ class BU_Version {
 
 	public $original = null;
 	public $post = null;
-	const tracking_meta_key = '_bu_version';
 
 	/**
 	 * Get the alternate version for a particular post_id or the alternate
@@ -942,7 +940,7 @@ class BU_Version {
 			if ( $original ) {
 				$this->original = $original;
 
-				$version_id = get_post_meta( $this->original->ID, self::tracking_meta_key, true );
+				$version_id = get_post_meta( $this->original->ID, BU_Version_Workflow::version_meta, true );
 
 				if ( ! empty( $version_id ) ) {
 
@@ -974,14 +972,14 @@ class BU_Version {
 			// To be cautious we fall back to post meta tracking key if post_parent = 0
 			// @see http://core.trac.wordpress.org/ticket/16673
 			if ( ! $this->post->post_parent ) {
-				$original_id = $wpdb->get_var( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_bu_version' AND meta_value = $version_id" );
+				$original_id = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s", BU_Version_Workflow::version_meta, $version_id ) );
 				if ( $original_id )
 					$this->original = get_post( $original_id );
 			} else {
 				$original = get_post( $this->post->post_parent );
 
 				// For safety check integrity of alt. versions' post_parent field
-				$version_tracking_id = get_post_meta( $original->ID, '_bu_version', true );
+				$version_tracking_id = get_post_meta( $original->ID, BU_Version_Workflow::version_meta, true );
 				if ( $version_tracking_id && $version_id == $version_tracking_id )
 					$this->original = $original;
 			}
@@ -1021,7 +1019,7 @@ class BU_Version {
 		if ( $result && ! is_wp_error( $result ) ) {
 			$this->post = get_post( $result );
 			$this->copy_original_meta( $meta_keys );
-			update_post_meta( $this->original->ID, self::tracking_meta_key, $this->post->ID );
+			update_post_meta( $this->original->ID, BU_Version_Workflow::version_meta, $this->post->ID );
 
 			do_action( 'bu_version_create', $result, $this->post, $this->original );
 
@@ -1105,7 +1103,7 @@ class BU_Version {
 	}
 
 	function delete_parent_meta() {
-		delete_post_meta( $this->original->ID, self::tracking_meta_key );
+		delete_post_meta( $this->original->ID, BU_Version_Workflow::version_meta );
 	}
 
 	function get_id() {
@@ -1146,5 +1144,3 @@ class BU_Version {
 	}
 
 }
-
-?>
