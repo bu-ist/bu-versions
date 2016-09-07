@@ -20,7 +20,16 @@ div.bu-version-notice {
 	display: none;
 }
 
+/**
+ * Hide "Add New" link on alternate post type
+ * https://core.trac.wordpress.org/ticket/31650
+ */
 .bu_alt_postedit a.add-new-h2 {
+	display: none;
+}
+
+/* since 4.3 */
+.bu_alt_postedit a.page-title-action {
 	display: none;
 }
 
