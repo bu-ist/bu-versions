@@ -682,7 +682,7 @@ class BU_Version_Controller {
 	}
 
 	static function get_URL($post) {
-		$url = 'admin.php?page=bu_create_version';
+		$url = admin_url( 'admin.php?page=bu_create_version' );
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
 		return wp_nonce_url($url, 'create_version');
 	}
