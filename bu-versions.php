@@ -876,14 +876,16 @@ class BU_Version_Controller {
 				return;
 			}
 
-			if( ! $alt_manager = $this->v_factory->get_alt_manager( $current_object->post_type ) ) {
-				return;
-			}
-
 			$version = new BU_Version();
 			if( $this->is_alt( $current_object->post_type ) ) {
 				$version->get( $current_object->ID );
 			} else {
+
+				$alt_manager = $this->v_factory->get_alt_manager( $current_object->post_type );
+				if ( ! $alt_manager ) {
+					return;
+				}
+
 				$version->get_version( $current_object->ID );
 			}
 
