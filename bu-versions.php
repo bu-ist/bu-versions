@@ -909,7 +909,7 @@ class BU_Version_Controller {
 				} else if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
 				} else {
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-create-alt', 'title' => __('Create Alternate Version', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 				}
 
 			} else if ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
@@ -918,7 +918,7 @@ class BU_Version_Controller {
 
 			} else if ( current_user_can( $alternate_post_type->cap->create_posts ) ) {
 
-					$wp_admin_bar->add_menu( array( 'id' => 'bu-create-alt', 'title' => __('Create Alternate Version', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
+					$wp_admin_bar->add_menu( array( 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 			}
 
 			add_filter( 'get_edit_post_link', array( $this, 'override_edit_post_link' ), 10, 3 );
