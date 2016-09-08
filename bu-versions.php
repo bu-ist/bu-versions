@@ -872,7 +872,9 @@ class BU_Version_Controller {
 
 			$current_post_type = get_post_type_object( $current_object->post_type );
 
-			if( ! isset( $current_object ) ) return;
+			if ( ! isset( $current_object ) ) {
+				return;
+			}
 
 			if( ! $alt_manager = $this->v_factory->get_alt_manager( $current_object->post_type ) ) {
 				return;

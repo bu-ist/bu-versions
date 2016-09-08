@@ -136,5 +136,3 @@ class Test_BU_Versions extends WP_UnitTestCase {
 	}
 
 }
-
-?>
