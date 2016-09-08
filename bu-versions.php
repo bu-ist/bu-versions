@@ -890,10 +890,11 @@ class BU_Version_Controller {
 			}
 
 			$original_post_type = get_post_type_object( $version->original->post_type );
+			$alternate_post_type = null;
 
 			if( $version->has_version() ) {
 				$alternate_post_type = get_post_type_object( $version->post->post_type );
-			} else {
+			} else if ( $alt_manager ) {
 				$alternate_post_type = get_post_type_object( $alt_manager->post_type );
 			}
 
@@ -918,7 +919,7 @@ class BU_Version_Controller {
 
 					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
 
-			} else if ( current_user_can( $alternate_post_type->cap->create_posts ) ) {
+			} else if ( $alternate_post_type && current_user_can( $alternate_post_type->cap->create_posts ) ) {
 
 					$wp_admin_bar->add_menu( array( 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 			}
