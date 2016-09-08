@@ -905,14 +905,14 @@ class BU_Version_Controller {
 			remove_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 20, 4 );
 
 			if ( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
-				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => $current_post_type->labels->edit_item, 'href' => get_edit_post_link( $current_object->ID ) ) );
+				$wp_admin_bar->add_menu( array( 'id' => 'edit', 'title' => $current_post_type->labels->edit_item, 'href' => get_edit_post_link( $current_object->ID ) ) );
 
 				if ( $version->original->ID != $current_object->ID && current_user_can( $original_post_type->cap->edit_post, $version->original->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
 				} else if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => $alternate_post_type->labels->edit_item, 'href' => $version->get_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-alt', 'title' => $alternate_post_type->labels->edit_item, 'href' => $version->get_edit_url() ) );
 				} else {
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 				}
 
 			} else if ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
