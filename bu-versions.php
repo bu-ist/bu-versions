@@ -919,7 +919,7 @@ class BU_Version_Controller {
 					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
 				} else if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-alt', 'title' => $alternate_post_type->labels->edit_item, 'href' => $version->get_edit_url() ) );
-				} else {
+				} else if ( ! $version->has_version() && current_user_can( $alternate_post_type->cap->create_posts ) ) {
 					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 				}
 
