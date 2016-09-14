@@ -350,6 +350,8 @@ class BU_VPost_Factory {
 			'menu_name' => 'Alternate Versions'
 		);
 
+		$default_supports = array( 'editor', 'title', 'author', 'revisions', 'excerpt' ); // @todo copy support from the post_type
+
 		$default_args = array(
 			'labels' => $labels,
 			'description' => '',
@@ -360,7 +362,7 @@ class BU_VPost_Factory {
 			'rewrite' => false,
 			'has_archive' => false,
 			'query_var' => true,
-			'supports' => array('editor', 'title', 'author', 'revisions' ), // copy support from the post_type
+			'supports' => array(),
 			'taxonomies' => array(),
 			'show_ui' => true,
 			'show_in_menu' => false,
@@ -409,6 +411,12 @@ class BU_VPost_Factory {
 			$args = $default_args;
 
 			$args['capability_type'] = $type->capability_type;
+
+			foreach ( $default_supports as $support ) {
+				if ( post_type_supports( $type->name, $support ) ) {
+					$args['supports'][] = $support;
+				}
+			}
 
 			foreach(array_keys($alt_supported_features) as $feature) {
 				if( post_type_supports($type->name, $feature) ) {
