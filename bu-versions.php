@@ -682,7 +682,7 @@ class BU_Version_Controller {
 	}
 
 	static function get_URL($post) {
-		$url = 'admin.php?page=bu_create_version';
+		$url = admin_url( 'admin.php?page=bu_create_version' );
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
 		return wp_nonce_url($url, 'create_version');
 	}
@@ -872,21 +872,31 @@ class BU_Version_Controller {
 
 			$current_post_type = get_post_type_object( $current_object->post_type );
 
-			if( ! isset( $current_object ) ) return;
+			if ( ! isset( $current_object ) ) {
+				return;
+			}
 
 			$version = new BU_Version();
 			if( $this->is_alt( $current_object->post_type ) ) {
 				$version->get( $current_object->ID );
 			} else {
+
+				$alt_manager = $this->v_factory->get_alt_manager( $current_object->post_type );
+				if ( ! $alt_manager ) {
+					return;
+				}
+
 				$version->get_version( $current_object->ID );
 			}
 
 			$original_post_type = get_post_type_object( $version->original->post_type );
+			$alternate_post_type = null;
 
 			if( $version->has_version() ) {
 				$alternate_post_type = get_post_type_object( $version->post->post_type );
+			} else if ( $alt_manager ) {
+				$alternate_post_type = get_post_type_object( $alt_manager->post_type );
 			}
-
 
 			$wp_admin_bar->remove_menu('edit');
 
@@ -895,18 +905,23 @@ class BU_Version_Controller {
 			remove_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 20, 4 );
 
 			if ( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
-				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label', 'bu-versions'), 'href' => get_edit_post_link( $current_object->ID ) ) );
+				$wp_admin_bar->add_menu( array( 'id' => 'edit', 'title' => $current_post_type->labels->edit_item, 'href' => get_edit_post_link( $current_object->ID ) ) );
 
 				if ( $version->original->ID != $current_object->ID && current_user_can( $original_post_type->cap->edit_post, $version->original->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
+				} else if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-alt', 'title' => $alternate_post_type->labels->edit_item, 'href' => $version->get_edit_url() ) );
+				} else {
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 				}
 
-				if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
-						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
-				}
+			} else if ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 
-			} elseif ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => $alternate_post_type->labels->edit_item, 'href' => $version->get_edit_url() ) );
+
+			} else if ( $alternate_post_type && current_user_can( $alternate_post_type->cap->create_posts ) ) {
+
+					$wp_admin_bar->add_menu( array( 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 			}
 
 			add_filter( 'get_edit_post_link', array( $this, 'override_edit_post_link' ), 10, 3 );
