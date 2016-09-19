@@ -5,7 +5,7 @@ Plugin URI: http://developer.bu.edu/bu-versions/
 Author: Boston University (IS&T)
 Author URI: http://sites.bu.edu/web/
 Description: Make and review edits to published content.
-Version: 0.7.7
+Version: 0.7.8
 Text Domain: bu-versions
 Domain Path: /languages
 */
@@ -39,13 +39,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  * @todo split into multiple files
  **/
 
+require_once __DIR__ . '/inc/class-bu-version-import.php';
+
 class BU_Version_Workflow {
 
 	public static $v_factory;
 	public static $controller;
 	public static $admin;
+	public static $import;
 
-	const version = '0.7.7';
+	const version = '0.7.8';
+	const version_meta = '_bu_version';
 
 	static function init() {
 
@@ -76,11 +80,16 @@ class BU_Version_Workflow {
 		add_rewrite_tag( '%version_id%', '[^&]+' );
 		add_filter( 'get_edit_post_link', array( self::$controller, 'override_edit_post_link' ), 10, 3 );
 
-		if (is_admin() ) {
+		if ( is_admin() ) {
 			self::$admin = new BU_Version_Admin( self::$v_factory );
 			self::$admin->bind_hooks();
-			add_action('load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
+			add_action( 'load-admin_page_bu_create_version', array( self::$controller, 'load_create_version' ) );
 			add_filter( 'redirect_post_location', array( self::$controller, 'published_version_redirect_loc' ), 10, 2 );
+		}
+
+		if ( class_exists( 'WP_Import' ) || class_exists( 'WXR_Importer' ) ) {
+			self::$import = new BU_Version_Import( self::$v_factory );
+			self::$import->bind_hooks();
 		}
 
 		add_action( 'shutdown', array( self::$controller, 'shutdown_handler' ) );
@@ -174,7 +183,6 @@ class BU_Version_Admin {
 	function admin_notices() {
 		global $current_screen;
 		global $post_ID;
-
 
 		if($current_screen->base == 'post') {
 
@@ -342,6 +350,8 @@ class BU_VPost_Factory {
 			'menu_name' => 'Alternate Versions'
 		);
 
+		$default_supports = array( 'editor', 'title', 'author', 'revisions', 'excerpt' ); // @todo copy support from the post_type
+
 		$default_args = array(
 			'labels' => $labels,
 			'description' => '',
@@ -352,7 +362,7 @@ class BU_VPost_Factory {
 			'rewrite' => false,
 			'has_archive' => false,
 			'query_var' => true,
-			'supports' => array('editor', 'title', 'author', 'revisions' ), // copy support from the post_type
+			'supports' => array(),
 			'taxonomies' => array(),
 			'show_ui' => true,
 			'show_in_menu' => false,
@@ -401,6 +411,12 @@ class BU_VPost_Factory {
 			$args = $default_args;
 
 			$args['capability_type'] = $type->capability_type;
+
+			foreach ( $default_supports as $support ) {
+				if ( post_type_supports( $type->name, $support ) ) {
+					$args['supports'][] = $support;
+				}
+			}
 
 			foreach(array_keys($alt_supported_features) as $feature) {
 				if( post_type_supports($type->name, $feature) ) {
@@ -521,15 +537,15 @@ class BU_Version_Manager {
 	}
 
 	function publish($post_id) {
-			$version = new BU_Version();
-			$version->get($post_id);
+		$version = new BU_Version();
+		$version->get($post_id);
 
-			$result =  $version->publish( $this->meta_keys );
-			if( $result && ! is_wp_error( $result ) ) {
-				return $version;
-			} else {
-				return $result;
-			}
+		$result =  $version->publish( $this->meta_keys );
+		if( $result && ! is_wp_error( $result ) ) {
+			return $version;
+		} else {
+			return $result;
+		}
 	}
 
 	function get_orig_post_type() {
@@ -632,7 +648,7 @@ class BU_Version_Manager_Admin {
 
 	function orig_column($column_name, $post_id) {
 		if($column_name != 'alternate_versions') return;
-		$version_id = get_post_meta($post_id, '_bu_version', true);
+		$version_id = get_post_meta($post_id, BU_Version_Workflow::version_meta, true);
 		if(!empty($version_id)) {
 			$version = new BU_Version();
 			$version->get($version_id);
@@ -674,7 +690,7 @@ class BU_Version_Controller {
 	}
 
 	static function get_URL($post) {
-		$url = 'admin.php?page=bu_create_version';
+		$url = admin_url( 'admin.php?page=bu_create_version' );
 		$url = add_query_arg(array('post_type' => $post->post_type, 'post' => $post->ID), $url);
 		return wp_nonce_url($url, 'create_version');
 	}
@@ -864,21 +880,31 @@ class BU_Version_Controller {
 
 			$current_post_type = get_post_type_object( $current_object->post_type );
 
-			if( ! isset( $current_object ) ) return;
+			if ( ! isset( $current_object ) ) {
+				return;
+			}
 
 			$version = new BU_Version();
 			if( $this->is_alt( $current_object->post_type ) ) {
 				$version->get( $current_object->ID );
 			} else {
+
+				$alt_manager = $this->v_factory->get_alt_manager( $current_object->post_type );
+				if ( ! $alt_manager ) {
+					return;
+				}
+
 				$version->get_version( $current_object->ID );
 			}
 
 			$original_post_type = get_post_type_object( $version->original->post_type );
+			$alternate_post_type = null;
 
 			if( $version->has_version() ) {
 				$alternate_post_type = get_post_type_object( $version->post->post_type );
+			} else if ( $alt_manager ) {
+				$alternate_post_type = get_post_type_object( $alt_manager->post_type );
 			}
-
 
 			$wp_admin_bar->remove_menu('edit');
 
@@ -887,18 +913,23 @@ class BU_Version_Controller {
 			remove_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 20, 4 );
 
 			if ( current_user_can( $current_post_type->cap->edit_post, $current_object->ID ) ) {
-				$wp_admin_bar->add_menu( array( 'id' => 'bu-edit', 'title' => _x( 'Edit', 'admin bar menu group label', 'bu-versions'), 'href' => get_edit_post_link( $current_object->ID ) ) );
+				$wp_admin_bar->add_menu( array( 'id' => 'edit', 'title' => $current_post_type->labels->edit_item, 'href' => get_edit_post_link( $current_object->ID ) ) );
 
 				if ( $version->original->ID != $current_object->ID && current_user_can( $original_post_type->cap->edit_post, $version->original->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-original', 'title' => __('Edit Original', 'bu-versions'), 'href' => $version->get_original_edit_url() ) );
+				} else if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-edit-alt', 'title' => $alternate_post_type->labels->edit_item, 'href' => $version->get_edit_url() ) );
+				} else if ( ! $version->has_version() && current_user_can( $alternate_post_type->cap->create_posts ) ) {
+					$wp_admin_bar->add_menu( array( 'parent' => 'edit', 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 				}
 
-				if ( $version->has_version() && $version->post->ID != $current_object->ID && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
-						$wp_admin_bar->add_menu( array( 'parent' => 'bu-edit', 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
-				}
+			} else if ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
 
-			} elseif ( $version->has_version() && current_user_can( $alternate_post_type->cap->edit_post, $version->post->ID ) ) {
-					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => __('Edit Alternate Version', 'bu-versions'), 'href' => $version->get_edit_url() ) );
+					$wp_admin_bar->add_menu( array( 'id' => 'bu-edit-alt', 'title' => $alternate_post_type->labels->edit_item, 'href' => $version->get_edit_url() ) );
+
+			} else if ( $alternate_post_type && current_user_can( $alternate_post_type->cap->create_posts ) ) {
+
+					$wp_admin_bar->add_menu( array( 'id' => 'bu-create-alt', 'title' => __('Create Clone', 'bu-versions'), 'href' => BU_Version_Controller::get_URL($current_object) ) );
 			}
 
 			add_filter( 'get_edit_post_link', array( $this, 'override_edit_post_link' ), 10, 3 );
@@ -919,7 +950,6 @@ class BU_Version {
 
 	public $original = null;
 	public $post = null;
-	const tracking_meta_key = '_bu_version';
 
 	/**
 	 * Get the alternate version for a particular post_id or the alternate
@@ -933,7 +963,7 @@ class BU_Version {
 			if ( $original ) {
 				$this->original = $original;
 
-				$version_id = get_post_meta( $this->original->ID, self::tracking_meta_key, true );
+				$version_id = get_post_meta( $this->original->ID, BU_Version_Workflow::version_meta, true );
 
 				if ( ! empty( $version_id ) ) {
 
@@ -965,14 +995,14 @@ class BU_Version {
 			// To be cautious we fall back to post meta tracking key if post_parent = 0
 			// @see http://core.trac.wordpress.org/ticket/16673
 			if ( ! $this->post->post_parent ) {
-				$original_id = $wpdb->get_var( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_bu_version' AND meta_value = $version_id" );
+				$original_id = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value = %s", BU_Version_Workflow::version_meta, $version_id ) );
 				if ( $original_id )
 					$this->original = get_post( $original_id );
 			} else {
 				$original = get_post( $this->post->post_parent );
 
 				// For safety check integrity of alt. versions' post_parent field
-				$version_tracking_id = get_post_meta( $original->ID, '_bu_version', true );
+				$version_tracking_id = get_post_meta( $original->ID, BU_Version_Workflow::version_meta, true );
 				if ( $version_tracking_id && $version_id == $version_tracking_id )
 					$this->original = $original;
 			}
@@ -1012,7 +1042,7 @@ class BU_Version {
 		if ( $result && ! is_wp_error( $result ) ) {
 			$this->post = get_post( $result );
 			$this->copy_original_meta( $meta_keys );
-			update_post_meta( $this->original->ID, self::tracking_meta_key, $this->post->ID );
+			update_post_meta( $this->original->ID, BU_Version_Workflow::version_meta, $this->post->ID );
 
 			do_action( 'bu_version_create', $result, $this->post, $this->original );
 
@@ -1096,7 +1126,7 @@ class BU_Version {
 	}
 
 	function delete_parent_meta() {
-		delete_post_meta( $this->original->ID, self::tracking_meta_key );
+		delete_post_meta( $this->original->ID, BU_Version_Workflow::version_meta );
 	}
 
 	function get_id() {
@@ -1137,5 +1167,3 @@ class BU_Version {
 	}
 
 }
-
-?>

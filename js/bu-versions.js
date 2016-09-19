@@ -9,7 +9,8 @@ jQuery(function($) {
 	}
 
 	var notice = $('.bu-version-notice').remove();
-	$('#wpbody-content > .wrap > h2').after(notice);
+	$('#wpbody-content > .wrap > h2').after(notice); // pre-4.3
+	$('#wpbody-content > .wrap > h1').after(notice); // since 4.3
 	$('.bu-version-notice').show();
 	overridePublishButton();
 
