@@ -1,9 +1,9 @@
 === BU Versions ===
-Contributors: gcorne, mgburns, awbauer
+Contributors: gcorne, mgburns, awbauer, inderpreet99
 Tags: content editing, workflow, version, merge, boston university, bu
 Requires at least: 3.1
-Tested up to: 4.3
-Stable tag: 0.7.7
+Tested up to: 4.6.1
+Stable tag: 0.7.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,8 @@ For more information check out [http://developer.bu.edu/bu-versions/](http://dev
 = Developers =
 
 For developer documentation, feature roadmaps and more visit the [plugin repository on Github](https://github.com/bu-ist/bu-versions/).
+
+[Build Status](https://travis-ci.org/bu-ist/bu-versions)
 
 == Installation ==
 
@@ -58,6 +60,14 @@ Please see our Github wiki page to learn [how to register alternate version supp
 5. Admin bar integration makes it easy to edit alternate versions in addition to original posts from the front-end
 
 == Changelog ==
+
+= 0.7.8 =
+
+* Fix UI issues since WP 4.3.
+* Add support for excerpts. Fixes #15.
+* Add create alternate version link to WP Admin Bar. Fixes #3.
+* Rewrite BU Version postmeta on WP importer. Fixes #22.
+
 = 0.7.7 =
 
 * Bugfix for post types with long names
