@@ -785,11 +785,21 @@ class BU_Version_Controller {
 	}
 
 
-	function preview($post) {
-		if ( ! is_object($post) )
+	function preview( $post ) {
+		if ( ! is_object( $post ) ) {
 			return $post;
+		}
+
+		if ( 'draft' === $post->post_status ) {
+			return $post;
+		}
 
 		$version_id = (int) get_query_var('version_id');
+
+		if ( 0 === $version_id ) {
+			return $post;
+		}
+
 		$preview = wp_get_post_autosave($version_id);
 		if ( ! is_object($preview) ) {
 			$preview = get_post($version_id);
