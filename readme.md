@@ -1,9 +1,9 @@
 # BU Versions #
-**Contributors:** gcorne, mgburns, awbauer, inderpreet99  
+**Contributors:** gcorne, mgburns, awbauer, inderpreet99, desrosj  
 **Tags:** content editing, workflow, version, merge, boston university, bu  
 **Requires at least:** 3.1  
 **Tested up to:** 4.6.1  
-**Stable tag:** 0.7.8  
+**Stable tag:** 0.7.9  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 
@@ -70,6 +70,10 @@ Please see our Github wiki page to learn [how to register alternate version supp
 
 
 ## Changelog ##
+
+### 0.7.9 ###
+
+* Fix bug when previewing a draft post. Preview content was not accurate.
 
 ### 0.7.8 ###
 
