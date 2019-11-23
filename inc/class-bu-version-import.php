@@ -33,8 +33,13 @@ class BU_Version_Import {
 	function fix_version_post_ids() {
 		global $wpdb;
 
-		$version_query = $wpdb->prepare( "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s", BU_Version_Workflow::version_meta );
-		$version_data = $wpdb->get_results( $version_query, ARRAY_A );
+		$version_data = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s",
+				BU_Version_Workflow::version_meta
+			),
+			ARRAY_A
+		);
 
 		foreach ( $version_data as $data ) {
 			if ( ! empty( $this->post_ids[ $data['meta_value'] ] ) ) {
