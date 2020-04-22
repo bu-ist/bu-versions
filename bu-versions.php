@@ -778,7 +778,8 @@ class BU_Version_Controller {
 			$version->get($version_id);
 			$url = $version->get_preview_URL();
 			if( isset( $url ) && $url != $_SERVER['REQUEST_URI'] ) {
-				wp_redirect($url, 302);
+				// The URL is built using get_permalink, so use safe redirect.
+				wp_safe_redirect( $url, 302 );
 				exit();
 			}
 		}
@@ -841,7 +842,9 @@ class BU_Version_Controller {
 			$result = $v_manager->create( $post_id );
 			if( $result && ! is_wp_error( $result ) ) {
 				$redirect_url = add_query_arg(array('post' => $result->get_id(), 'action' => 'edit'), 'post.php');
-				wp_redirect($redirect_url);
+
+				// The URL is assuming that post.php is on the current site, so use a safe redirect.
+				wp_safe_redirect( $redirect_url );
 				exit();
 			} else {
 				wp_die(__("The alternate version could not be created. ", 'bu-versions') . $result->get_error_message() );
